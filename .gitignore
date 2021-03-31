@@ -1,0 +1,6 @@
+*.class
+*.txt
+*.qpf
+*.qsf
+*.bak
+db/
