@@ -4,7 +4,7 @@ USE ieee.numeric_std.all;
 use std.textio.all;
 use ieee.std_logic_textio.all;
 
-ENTITY if_stage IS
+ENTITY fetch IS
 
 
 port(
@@ -19,10 +19,10 @@ port(
 	instruction : out std_logic_vector(31 downto 0) -- instruction going to decode stage
 	);
 
-END if_stage;
+END fetch;
 
 
-architecture if_stage_arch of if_stage is 
+architecture fetch_arch of fetch is 
 
 -- component declaration
 
@@ -157,7 +157,7 @@ iMem : instructionMemory
 				
 	
 				
-end if_stage_arch;
+end fetch_arch;
 
 
 
