@@ -23,7 +23,7 @@ ENTITY Instruction_Memory IS
 	);
 END Instruction_Memory;
 
-ARCHITECTURE rtl OF instructionMemory IS
+ARCHITECTURE rtl OF instruction_Memory IS
 	TYPE MEM IS ARRAY(ram_size-1 downto 0) OF STD_LOGIC_VECTOR(31 DOWNTO 0);
 	SIGNAL ram_block: MEM;
 	SIGNAL read_address_reg: INTEGER RANGE 0 to ram_size-1;
