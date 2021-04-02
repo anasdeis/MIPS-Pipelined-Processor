@@ -20,12 +20,12 @@ port (
 	MUX_out : out std_logic_vector (31 downto 0); -- data to write back
 	IR_out: out std_logic_vector (4 downto 0)		 -- instruction out
   );
-end wb;
+end Write_Back;
 
 architecture behavioral of Write_Back is
 
 begin
-	process(mem_op_en_in, EX_in, MEM_in, register_file_en_out)
+	process(mem_op_en_in, register_file_en_in, EX_in, MEM_in)
 	begin
 		register_file_en_out <= register_file_en_in;	 -- enable writing
 		IR_OUT <= IR_IN;								       -- destination register address
@@ -40,7 +40,7 @@ begin
 				MUX_out <= MEM_in;
 			-- else unknown
 			when others => 
-				MUX_out <= x"XXXXXXXX"; 
+				MUX_out <= "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"; 
 		end case;
 	end process;
 end behavioral;
