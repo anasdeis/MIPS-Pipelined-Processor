@@ -3,7 +3,10 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
  
 entity alu is
- Port ( 
+ Port (
+ 
+ ALUOp_in : in std_logic_vector(4 downto 0); -- ALU instuction for decode
+
  clk : in std_logic;
  in_a : in STD_LOGIC_VECTOR (31 downto 0);
  in_b : in STD_LOGIC_VECTOR (31 downto 0);
