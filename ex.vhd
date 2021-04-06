@@ -51,10 +51,10 @@ component alu port (
 ); end component;
 
 component adder port (
-	  clk : in std_logic;
+    clk : in std_logic;
     four : in integer;
-	  counterOutput : in std_logic_vector(31 downto 0);
-	  adderOutput : out std_logic_vector(31 downto 0)
+    counterOutput : in std_logic_vector(31 downto 0);
+    adderOutput : out std_logic_vector(31 downto 0)
 ); end component;
 
 
@@ -71,7 +71,7 @@ dest_register_out <= dest_register_in;
 write_back_out <= write_back_in;
 
 exMux : mux port map(
-	  clk => clk,
+    clk => clk,
     selector => muxSelect,
     input_0 => read_data_2,
     input_1 => std_logic_vector(rotate_left(unsigned(immediate_in), 2)),
@@ -79,16 +79,16 @@ exMux : mux port map(
 
 exAlu : alu port map(
     clk => clk,
-	  in_a => read_data_1,
+    in_a => read_data_1,
     in_b => muxResult,
     instruction => aluOp_in,
-	  output => alu_result);
+    output => alu_result);
 
 
 exAdder : adder port map( 
-	  clk => clk,
-	  four => adder_in,
-	  counterOutput => std_logic_vector(rotate_left(unsigned(immediate_in), 2)),
-	  adderOutput => adder_result);
+    clk => clk,
+    four => adder_in,
+    counterOutput => std_logic_vector(rotate_left(unsigned(immediate_in), 2)),
+    adderOutput => adder_result);
 
 end architecture;
