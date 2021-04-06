@@ -3,7 +3,9 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
  
 entity alu is
- Port ( in_a : in STD_LOGIC_VECTOR (31 downto 0);
+ Port ( 
+ clk : in std_logic;
+ in_a : in STD_LOGIC_VECTOR (31 downto 0);
  in_b : in STD_LOGIC_VECTOR (31 downto 0);
  instruction : in STD_LOGIC_VECTOR (4 downto 0); --there are 27 possible instructions therefore need 5 bits
  output : out STD_LOGIC_VECTOR(31 downto 0));
