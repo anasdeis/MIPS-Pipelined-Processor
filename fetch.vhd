@@ -1,163 +1,146 @@
-LIBRARY ieee;
-USE ieee.std_logic_1164.all;
-USE ieee.numeric_std.all;
+-- Entity: Fetch
+-- Authors: Anas Deis, Albert Assouad, Barry Chen
+-- Date: 04/16/2021
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 use std.textio.all;
 use ieee.std_logic_textio.all;
 
-ENTITY fetch IS
+-- Stage 1: Fetch
 
+entity Fetch is
 
 port(
 	clk : in std_logic;
-	mux_EX : in std_logic_vector(31 downto 0); -- result from adder in EX
-	selectInputs : in std_logic;
-	four : in INTEGER;
-	structuralStall : IN STD_LOGIC := '0';
-	pcStall : IN STD_LOGIC := '0';
-	
-	nxt_address : out std_logic_vector(31 downto 0); -- output from PC adder to mux or adder in EX
-	instruction : out std_logic_vector(31 downto 0) -- instruction going to decode stage
+	fetch_sel : in std_logic;
+	structural_stall_in : in std_logic := '0';
+	pc_stall_in : in std_logic := '0';	
+	mux_in : in std_logic_vector(31 downto 0);       -- result from adder in EX
+	next_address_out : out std_logic_vector(31 downto 0); -- output from PC adder to mux or adder in EX
+	instruction_out : out std_logic_vector(31 downto 0)  -- instruction going to decode stage
 	);
+	
+end Fetch;
 
-END fetch;
-
-
-architecture fetch_arch of fetch is 
-
--- component declaration
+architecture behavioral of Fetch is 
 
 -- instruction memory  
-component instructionMemory IS
+component Instruction_Memory IS
 	GENERIC(
-	-- might need to change it 
 		ram_size : INTEGER := 1024;
 		mem_delay : time := 1 ns;
 		clock_period : time := 1 ns
 	);
 	PORT (
-		clock: IN STD_LOGIC;
-		writedata: IN STD_LOGIC_VECTOR (31 DOWNTO 0);
-		address: IN INTEGER RANGE 0 TO ram_size-1;
-		memwrite: IN STD_LOGIC;
-		memread: IN STD_LOGIC;
-		readdata: OUT STD_LOGIC_VECTOR (31 DOWNTO 0);
-		waitrequest: OUT STD_LOGIC
+		clock: in std_logic;
+		writedata: in std_logic_vector (31 DOWNTO 0);
+		address: in INTEGER range 0 to ram_size-1;
+		memwrite: in std_logic;
+		memread: in std_logic;
+		readdata: out std_logic_vector (31 DOWNTO 0);
+		waitrequest: out std_logic
 	);
-end component;
-
--- pc register
-component pc is
-port(clk : in std_logic;
-  rst : in std_logic;
-  pcOutput : out std_logic_vector(31 downto 0);
-	pcInput : in std_logic_vector(31 downto 0)
-	 );
 end component;
 
 -- mux 
 component mux is
 port(
-  input_0 : in std_logic_vector(31 downto 0);
+	input_0 : in std_logic_vector(31 downto 0);
 	input_1 : in std_logic_vector(31 downto 0);
 	selector : in std_logic;
 	output : out std_logic_vector(31 downto 0)
-	 );
+	);
 end component;
 
 -- adder
 component adder is
 port(
-  clk : in std_logic; 
-	four : in integer;
-	counterOutput : in std_logic_vector(31 downto 0);
-	adderOutput : out std_logic_vector(31 downto 0)
+	A : in std_logic_vector(31 downto 0);
+	B : in INTEGER;
+	S : out std_logic_vector(31 downto 0)
 	);
 end component;
 	
 -- signals
+-- instruction memory
 constant clk_period : time := 1 ns;
 signal writedata: std_logic_vector(31 downto 0);
 signal address: INTEGER RANGE 0 TO 1024-1;
-signal memwrite: STD_LOGIC := '0';
-signal memread: STD_LOGIC := '0';
-signal readdata: STD_LOGIC_VECTOR (31 DOWNTO 0);
-signal waitrequest: STD_LOGIC;
+signal memwrite: std_logic := '0';
+signal memread: std_logic := '0';
+signal readdata: std_logic_vector (31 DOWNTO 0);
+signal waitrequest: std_logic;
 
-signal pcInput : std_logic_vector(31 downto 0);
-signal pcOutput : std_logic_vector(31 downto 0);
-signal addOutput : STD_LOGIC_VECTOR(31 DOWNTO 0);
+-- PC + Add
+signal pc_input : std_logic_vector(31 downto 0);
+signal pc_output : std_logic_vector(31 downto 0);
+signal add_output : std_logic_vector(31 DOWNTO 0);
+signal fetch_output : std_logic_vector(31 DOWNTO 0);
 
-signal rst : std_logic := '0';
-
-signal internal_selectOutput : STD_LOGIC_VECTOR(31 DOWNTO 0); -- LOOK IT UP
-
---SIGNAL FOR STALLS --> LOOK IT UP
-signal stallValue : STD_LOGIC_VECTOR(31 DOWNTO 0) := "00000000000000000000000000100000";
-signal memoryValue : STD_LOGIC_VECTOR(31 DOWNTO 0);
+-- either stall or output memory data
+signal stall : std_logic_vector(31 DOWNTO 0) := x"00000020";
+signal memory_data : std_logic_vector(31 DOWNTO 0);
 	
 begin
 
-nxt_address <= internal_selectOutput;
-address <= to_integer(unsigned(addOutput(9 downto 0)))/4;
+	address <= to_integer(unsigned(add_output(9 downto 0)))/4;
+	next_address_out <= fetch_output;
 
+	PC: process (clk)
+	begin
+		if (clk'event and clk = '1') then 	-- set PC to next instruction
+			pc_output <= pc_input;
+		end if;
+		
+	end process;
 
-pcCounter : pc 
-port map(
-  clk => clk,
-	rst => rst,
-	pcOutput => pcOutput,
-	pcInput => pcInput
-);
+	add_4 : adder
+	port map(
+		A => pc_output,
+		B => 4,
+		S => add_output
+	);
 
-add : adder
-port map(
-  clk => clk,
-	four => four,
-	counterOutput => pcOutput,
-	adderOutput => addOutput
-);
+	fetch_mux : mux 
+	port map(
+		 input_0 => add_output,
+		 input_1 => mux_in,
+		 selector => fetch_sel,
+		 output => fetch_output
+		 );
+		 
+	pc_mux : mux 
+	port map (
+		input_0 => fetch_output,
+		input_1 => pc_output,
+		selector => pc_stall_in,
+		output => pc_input
+	);
 
-fetchMux : mux 
-port map(
-	 input_0 => addOutput,
-	 input_1 => mux_EX,
-	 selector => selectInputs,
-	 output => internal_selectOutput
-	 );
-	 
-structuralMux : mux 
-port map (
-input_0 => memoryValue,
-input_1 => stallValue,
-selector => structuralStall,
-output => instruction
-);
-
-pcMux : mux 
-port map (
-input_0 => internal_selectOutput,
-input_1 => pcOutput,
-selector => pcStall,
-output => pcInput
-);
-	 
-iMem : instructionMemory
-	GENERIC MAP(
-            ram_size => 1024
-                )
-                PORT MAP(
-                    clk,
-                    writedata,
-                    address,
-                    memwrite,
-                    memread,
-                    memoryValue,
-                    waitrequest
-                );
-				
-	
-				
-end fetch_arch;
+	structural_mux : mux 
+	port map (
+		input_0 => memory_data,
+		input_1 => stall,
+		selector => structural_stall_in,
+		output => instruction_out
+	);
+		 
+	instr_mem : Instruction_Memory
+		GENERIC MAP(
+			ram_size => 1024
+		)
+		PORT MAP(
+			clk,
+			writedata,
+			address,
+			memwrite,
+			memread,
+			memory_data,
+			waitrequest
+		);		
+end behavioral;
 
 
 
