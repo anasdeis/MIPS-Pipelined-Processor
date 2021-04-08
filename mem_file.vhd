@@ -17,7 +17,7 @@ ENTITY memory IS
 		memread: IN STD_LOGIC;
 		waitrequest: OUT STD_LOGIC;
 		read_data_output: OUT STD_LOGIC_VECTOR (31 DOWNTO 0);
-    write_text_flag : IN STD_LOGIC
+    		write_text_flag : IN STD_LOGIC
 	);
 END memory;
 
@@ -30,8 +30,8 @@ ARCHITECTURE rtl OF memory IS
 BEGIN
 	--SRAM model
 	mem_process: PROCESS (clk)
-  file mem_file : text open write_mode is "mem_file.txt";
-  variable outLine : line;	
+  	file mem_file : text open write_mode is "mem_file.txt";
+  	variable outLine : line;	
 	variable rowLine : integer := 0;
   
 	BEGIN
@@ -50,16 +50,16 @@ BEGIN
 		read_address_reg <= address;
 		END IF;
     
-    --write to text process
-    if writeToText = '1' then
-      while (rowLine < ram_size-1) loop 
+    		--write to text process
+    		if writeToText = '1' then
+		      	while (rowLine < ram_size-1) loop 
 	
 				write(outLine, ram_block(rowLine));
 				writeline(memory_file, outLine);
 				rowLine := rowLine + 1;
 	
-	    end loop;
-    end if;
+	    		end loop;
+    		end if;
 	
   END PROCESS;
 	readdata <= ram_block(read_address_reg);
