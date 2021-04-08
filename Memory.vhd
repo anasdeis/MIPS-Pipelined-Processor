@@ -1,4 +1,3 @@
---Taken from the Memory.vhd file from assignment 2 and modified
 LIBRARY ieee;
 USE ieee.std_logic_1164.all;
 USE ieee.numeric_std.all;
