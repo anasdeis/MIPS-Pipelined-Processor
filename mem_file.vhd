@@ -51,7 +51,7 @@ BEGIN
 		END IF;
     
     		--write to text process
-    		if writeToText = '1' then
+    		if write_text_flag = '1' then
 		      	while (rowLine < ram_size-1) loop 
 	
 				write(outLine, ram_block(rowLine));
