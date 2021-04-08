@@ -6,10 +6,12 @@ library ieee;
 use ieee.std_logic_1164.ALL;
 
 entity mux is
-    Port ( selector : in  std_logic;
-           input_0  : in  std_logic_vector (31 downto 0);
-           input_1  : in  std_logic_vector (31 downto 0);
-           output   : out std_logic_vector (31 downto 0));
+port ( 
+	selector : in  std_logic;
+	input_0  : in  std_logic_vector (31 downto 0);
+	input_1  : in  std_logic_vector (31 downto 0);
+	output   : out std_logic_vector (31 downto 0)
+);
 end mux;
 
 architecture behavioural of mux is

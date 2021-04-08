@@ -11,7 +11,6 @@ use ieee.std_logic_textio.all;
 -- Stage 1: Fetch
 
 entity Fetch is
-
 port(
 	clk : in std_logic;
 	fetch_sel : in std_logic;
@@ -20,28 +19,27 @@ port(
 	mux_in : in std_logic_vector(31 downto 0);       -- result from adder in EX
 	next_address_out : out std_logic_vector(31 downto 0); -- output from PC adder to mux or adder in EX
 	instruction_out : out std_logic_vector(31 downto 0)  -- instruction going to decode stage
-	);
-	
+);
 end Fetch;
 
 architecture behavioral of Fetch is 
 
 -- instruction memory  
 component Instruction_Memory IS
-	GENERIC(
-		ram_size : INTEGER := 1024;
-		mem_delay : time := 1 ns;
-		clock_period : time := 1 ns
-	);
-	PORT (
-		clock: in std_logic;
-		writedata: in std_logic_vector (31 DOWNTO 0);
-		address: in INTEGER range 0 to ram_size-1;
-		memwrite: in std_logic;
-		memread: in std_logic;
-		readdata: out std_logic_vector (31 DOWNTO 0);
-		waitrequest: out std_logic
-	);
+GENERIC(
+	ram_size : INTEGER := 1024;
+	mem_delay : time := 1 ns;
+	clock_period : time := 1 ns
+);
+port (
+	clock: in std_logic;
+	writedata: in std_logic_vector (31 DOWNTO 0);
+	address: in INTEGER range 0 to ram_size-1;
+	memwrite: in std_logic;
+	memread: in std_logic;
+	readdata: out std_logic_vector (31 DOWNTO 0);
+	waitrequest: out std_logic
+);
 end component;
 
 -- mux 
@@ -51,8 +49,7 @@ port(
 	input_1 : in std_logic_vector(31 downto 0);
 	selector : in std_logic;
 	output : out std_logic_vector(31 downto 0)
-	);
-end component;
+); end component;
 
 -- adder
 component adder is
@@ -60,8 +57,7 @@ port(
 	A : in std_logic_vector(31 downto 0);
 	B : in INTEGER;
 	S : out std_logic_vector(31 downto 0)
-	);
-end component;
+); end component;
 	
 -- signals
 -- instruction memory
@@ -109,7 +105,7 @@ begin
 		 input_1 => mux_in,
 		 selector => fetch_sel,
 		 output => fetch_output
-		 );
+	);
 		 
 	pc_mux : mux 
 	port map (
@@ -128,18 +124,18 @@ begin
 	);
 		 
 	instr_mem : Instruction_Memory
-		GENERIC MAP(
-			ram_size => 1024
-		)
-		PORT MAP(
-			clk,
-			writedata,
-			address,
-			memwrite,
-			memread,
-			memory_data,
-			waitrequest
-		);		
+	GENERIC map(
+		ram_size => 1024
+	)
+	port map(
+		clk,
+		writedata,
+		address,
+		memwrite,
+		memread,
+		memory_data,
+		waitrequest
+	);		
 end behavioral;
 
 
