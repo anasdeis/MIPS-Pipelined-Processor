@@ -16,7 +16,7 @@ ENTITY mem_file IS
 		memwrite: IN STD_LOGIC;
 		memread: IN STD_LOGIC;
 		waitrequest: OUT STD_LOGIC;
-		read_data_output: OUT STD_LOGIC_VECTOR (31 DOWNTO 0);
+		readdata: OUT STD_LOGIC_VECTOR (31 DOWNTO 0);
     		write_text_flag : IN STD_LOGIC
 	);
 END mem_file;
