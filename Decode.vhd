@@ -45,8 +45,8 @@ port (
 	-- EX stage
 	ALUOp_out : out std_logic_vector(4 downto 0); -- specifies the ALU operation to be performed
 	-- selector for ALU mux in EX stage 
-	sel_ALU_mux1_out : out std_logic; -- determine input A: register A or address (output of IF) (ALU1src)
-	sel_ALU_mux2_out : out std_logic; -- determine input B: register B or immediate value (ALU2src)
+	sel_ALU_mux0_out : out std_logic; -- determine input A: register A or address (output of IF) (ALU1src)
+	sel_ALU_mux1_out : out std_logic; -- determine input B: register B or immediate value (ALU2src)
 
 	-- sign extender
 	immediate_out: out std_logic_vector (31 downto 0) -- output of sign extended immediate address
@@ -55,12 +55,12 @@ end Decode;
 
 architecture behavioral of Decode is
 
-
 -- Signals for register file
 type registers is array (0 to 31) of std_logic_vector(31 downto 0);	-- MIPS 32 32-bit registers
 signal register_file: registers := (others => x"00000000"); 		   -- initialize all registers to 0, including R0
 
 begin
+
 	update_reg_data: process (clk)
 	
 	variable rs : std_logic_vector(4 downto 0);	-- register source (rs)
@@ -88,6 +88,7 @@ begin
 	variable idx : integer := 0;
 	
 	begin
+	
 		if write_file_en = '1' then
 			file_open(fptr,"register_file.txt.", write_mode);
 			idx := 0;
@@ -136,8 +137,8 @@ begin
 			MemWrite_out <= '0';
 			MemToReg_out <= '0';
 			RegWrite_out <= '0';
+			sel_ALU_mux0_out <= '0';
 			sel_ALU_mux1_out <= '0';
-			sel_ALU_mux2_out <= '0';
 			R_Type_out <= '1';
 			J_Type_out <= '0';
 			shift_out <= '0';
@@ -154,8 +155,8 @@ begin
 				MemWrite_out <= '0';
 				MemToReg_out <= '0'; 
 				RegWrite_out <= '1';
-				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '1';
+				sel_ALU_mux0_out <= '0';
+				sel_ALU_mux1_out <= '1';
 				R_Type_out <= '1';
 				J_Type_out <= '0';
 				shift_out <= '0';
@@ -168,8 +169,8 @@ begin
 				MemWrite_out <= '0';				
 				MemToReg_out <= '0'; 
 				RegWrite_out <= '1';
-				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '1';
+				sel_ALU_mux0_out <= '0';
+				sel_ALU_mux1_out <= '1';
 				R_Type_out <= '1';
 				J_Type_out <= '0';
 				shift_out <= '0';
@@ -182,8 +183,8 @@ begin
 				MemWrite_out <= '0';				
 				MemToReg_out <= '0'; 
 				RegWrite_out <= '1';
+				sel_ALU_mux0_out <= '0';
 				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '0';
 				R_Type_out <= '0';				
 				J_Type_out <= '0';
 				shift_out <= '0';
@@ -196,8 +197,8 @@ begin
 				MemWrite_out <= '0';				
 				MemToReg_out <= '0';
 				RegWrite_out <= '1';
-				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '1';
+				sel_ALU_mux0_out <= '0';
+				sel_ALU_mux1_out <= '1';
 				R_Type_out <= '1';				
 				J_Type_out <= '0';
 				shift_out <= '0';
@@ -210,8 +211,8 @@ begin
 				MemWrite_out <= '0';				
 				MemToReg_out <= '0';
 				RegWrite_out <= '1';
-				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '1';
+				sel_ALU_mux0_out <= '0';
+				sel_ALU_mux1_out <= '1';
 				R_Type_out <= '1';		
 				J_Type_out <= '0';
 				shift_out <= '0';
@@ -224,8 +225,8 @@ begin
 				MemWrite_out <= '0';				
 				MemToReg_out <= '0';
 				RegWrite_out <= '1';
-				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '1';				
+				sel_ALU_mux0_out <= '0';
+				sel_ALU_mux1_out <= '1';				
 				R_Type_out <= '1';				
 				J_Type_out <= '0';
 				shift_out <= '0';
@@ -238,8 +239,8 @@ begin
 				MemWrite_out <= '0';			
 				MemToReg_out <= '0'; 
 				RegWrite_out <= '1';
+				sel_ALU_mux0_out <= '0';
 				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '0';
 				R_Type_out <= '0';				
 				J_Type_out <= '0';
 				shift_out <= '0';
@@ -254,8 +255,8 @@ begin
 				MemWrite_out <= '0';				
 				MemToReg_out <= '0';
 				RegWrite_out <= '1';				
-				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '1';
+				sel_ALU_mux0_out <= '0';
+				sel_ALU_mux1_out <= '1';
 				R_Type_out <= '1';		
 				J_Type_out <= '0';
 				shift_out <= '0';
@@ -268,8 +269,8 @@ begin
 				MemWrite_out <= '0';		
 				MemToReg_out <= '0'; 
 				RegWrite_out <= '1';
-				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '1';
+				sel_ALU_mux0_out <= '0';
+				sel_ALU_mux1_out <= '1';
 				R_Type_out <= '1';
 				J_Type_out <= '0';
 				shift_out <= '0';
@@ -282,8 +283,8 @@ begin
 				MemWrite_out <= '0';			
 				MemToReg_out <= '0'; 
 				RegWrite_out <= '1';
-				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '1';
+				sel_ALU_mux0_out <= '0';
+				sel_ALU_mux1_out <= '1';
 				R_Type_out <= '1';			
 				J_Type_out <= '0';
 				shift_out <= '0';
@@ -296,8 +297,8 @@ begin
 				MemWrite_out <= '0';				
 				MemToReg_out <= '0';
 				RegWrite_out <= '1';
-				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '1';
+				sel_ALU_mux0_out <= '0';
+				sel_ALU_mux1_out <= '1';
 				ALUOp_out <= "01010"; 
 				R_Type_out <= '1';
 				J_Type_out <= '0';
@@ -311,8 +312,8 @@ begin
 				MemWrite_out <= '0';				
 				MemToReg_out <= '0';
 				RegWrite_out <= '1';
-				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '0';				
+				sel_ALU_mux0_out <= '0';
+				sel_ALU_mux1_out <= '0';				
 				R_Type_out <= '0';
 				J_Type_out <= '0';
 				shift_out <= '0';
@@ -325,8 +326,8 @@ begin
 				MemWrite_out <= '0';				
 				MemToReg_out <= '0'; 
 				RegWrite_out <= '1';
+				sel_ALU_mux0_out <= '0';
 				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '0';
 				R_Type_out <= '0';			
 				J_Type_out <= '0';
 				shift_out <= '0';
@@ -339,8 +340,8 @@ begin
 				MemWrite_out <= '0';		
 				MemToReg_out <= '0';
 				RegWrite_out <= '1';
+				sel_ALU_mux0_out <= '0';
 				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '0';
 				R_Type_out <= '0';				
 				J_Type_out <= '0';
 				shift_out <= '0';
@@ -355,8 +356,8 @@ begin
 				MemWrite_out <= '0';		
 				MemToReg_out <= '0';
 				RegWrite_out <= '1';
-				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '1'; 
+				sel_ALU_mux0_out <= '0';
+				sel_ALU_mux1_out <= '1'; 
 				R_Type_out <= '1';				
 				J_Type_out <= '0';
 				shift_out <= '0';
@@ -369,8 +370,8 @@ begin
 				MemWrite_out <= '0';				
 				MemToReg_out <= '0';
 				RegWrite_out <= '1';
-				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '1';
+				sel_ALU_mux0_out <= '0';
+				sel_ALU_mux1_out <= '1';
 				R_Type_out <= '1';				
 				J_Type_out <= '0';
 				shift_out <= '0';
@@ -383,8 +384,8 @@ begin
 				MemWrite_out <= '0';				
 				MemToReg_out <= '0';
 				RegWrite_out <= '1';
-				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '0';				
+				sel_ALU_mux0_out <= '0';
+				sel_ALU_mux1_out <= '0';				
 				R_Type_out <= '0';			
 				J_Type_out <= '0';
 				shift_out <= '0';
@@ -399,8 +400,8 @@ begin
 				MemWrite_out <= '0';				
 				MemToReg_out <= '0';
 				RegWrite_out <= '1';
+				sel_ALU_mux0_out <= '0';
 				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '0';
 				R_Type_out <= '1';				
 				J_Type_out <= '0';
 				shift_out <= '1';
@@ -413,8 +414,8 @@ begin
 				MemWrite_out <= '0';			
 				MemToReg_out <= '0';
 				RegWrite_out <= '1';
+				sel_ALU_mux0_out <= '0';
 				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '0';
 				R_Type_out <= '1';				
 				J_Type_out <= '0';
 				shift_out <= '1';
@@ -427,8 +428,8 @@ begin
 				MemWrite_out <= '0';				
 				MemToReg_out <= '0';
 				RegWrite_out <= '1';
+				sel_ALU_mux0_out <= '0';
 				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '0';
 				R_Type_out <= '1';
 				J_Type_out <= '0';
 				structural_hazard_out <= '0';
@@ -442,8 +443,8 @@ begin
 				MemWrite_out <= '0';				
 				MemToReg_out <= '1'; 
 				RegWrite_out <= '1';
+				sel_ALU_mux0_out <= '0';
 				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '0';
 				R_Type_out <= '0';				
 				J_Type_out <= '0';
 				shift_out <= '0';
@@ -456,8 +457,8 @@ begin
 				MemWrite_out <= '1';				
 				MemToReg_out <= '1'; 
 				RegWrite_out <= '0';
+				sel_ALU_mux0_out <= '0';
 				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '0';
 				R_Type_out <= '0';			
 				J_Type_out <= '0';
 				shift_out <= '0';
@@ -472,8 +473,8 @@ begin
 				MemWrite_out <= '0';				
 				MemToReg_out <= '0';
 				RegWrite_out <= '0';
-				sel_ALU_mux1_out <= '1';
-				sel_ALU_mux2_out <= '0';
+				sel_ALU_mux0_out <= '1';
+				sel_ALU_mux1_out <= '0';
 				R_Type_out <= '0';			
 				J_Type_out <= '0';
 				shift_out <= '0';
@@ -486,8 +487,8 @@ begin
 				MemWrite_out <= '0';				
 				MemToReg_out <= '0'; 
 				RegWrite_out <= '0';
-				sel_ALU_mux1_out <= '1';
-				sel_ALU_mux2_out <= '0';
+				sel_ALU_mux0_out <= '1';
+				sel_ALU_mux1_out <= '0';
 				R_Type_out <= '0';			
 				J_Type_out <= '0';
 				shift_out <= '0';
@@ -500,8 +501,8 @@ begin
 				MemWrite_out <= '0';				
 				MemToReg_out <= '0';
 				RegWrite_out <= '0';
-				sel_ALU_mux1_out <= '1';
-				sel_ALU_mux2_out <= '0';
+				sel_ALU_mux0_out <= '1';
+				sel_ALU_mux1_out <= '0';
 				R_Type_out <= '0';				
 				J_Type_out <= '1';	
 				shift_out <= '0';
@@ -514,8 +515,8 @@ begin
 				MemWrite_out <= '0';				
 				MemToReg_out <= '0';
 				RegWrite_out <= '0';
+				sel_ALU_mux0_out <= '0';
 				sel_ALU_mux1_out <= '0';
-				sel_ALU_mux2_out <= '0';
 				R_Type_out <= '1';				
 				J_Type_out <= '1';
 				shift_out <= '0';
@@ -528,8 +529,8 @@ begin
 				MemWrite_out <= '0';				
 				MemToReg_out <= '0'; 
 				RegWrite_out <= '1';
-				sel_ALU_mux1_out <= '1';
-				sel_ALU_mux2_out <= '0';
+				sel_ALU_mux0_out <= '1';
+				sel_ALU_mux1_out <= '0';
 				R_Type_out <= '0';				
 				J_Type_out <= '1';
 				shift_out <= '0';
