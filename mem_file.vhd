@@ -2,10 +2,12 @@
 LIBRARY ieee;
 USE ieee.std_logic_1164.all;
 USE ieee.numeric_std.all;
+USE ieee.std_logic_textio.all;
+USE std.textio.all;
 
 ENTITY mem_file IS
 	GENERIC(
-		ram_size : INTEGER := 32768;
+		ram_size : INTEGER := 8192;
 		mem_delay : time := 10 ns;
 		clock_period : time := 1 ns
 	);
@@ -17,7 +19,7 @@ ENTITY mem_file IS
 		memread: IN STD_LOGIC;
 		waitrequest: OUT STD_LOGIC;
 		readdata: OUT STD_LOGIC_VECTOR (31 DOWNTO 0);
-    		write_text_flag : IN STD_LOGIC
+    	write_text_flag : IN STD_LOGIC
 	);
 END mem_file;
 
@@ -28,12 +30,30 @@ ARCHITECTURE rtl OF mem_file IS
 	SIGNAL write_waitreq_reg: STD_LOGIC := '1';
 	SIGNAL read_waitreq_reg: STD_LOGIC := '1';
 BEGIN
+
+	write_file: process(write_text_flag)
+	FILE fptr : text;
+	variable file_line : line;	
+	variable idx : integer := 0;
+	
+	begin
+	
+		if write_text_flag = '1' then
+			file_open(fptr,"memory.txt.", write_mode);
+			idx := 0;
+			while (idx < 8192) loop 
+				write(file_line, ram_block(idx));
+				writeline(fptr, file_line);
+				idx := idx + 1;
+			end loop;
+		end if;
+		
+		file_close(fptr);
+		
+	end process;
+	
 	--SRAM model
 	mem_process: PROCESS (clk)
-  	file mem_file : text open write_mode is "mem_file.txt";
-  	variable outLine : line;	
-	variable rowLine : integer := 0;
-  
 	BEGIN
 		--This is a cheap trick to initialize the SRAM in simulation
     		IF(now < 1 ps)THEN
@@ -48,20 +68,8 @@ BEGIN
 				ram_block(address) <= writedata;
 			END IF;
 		read_address_reg <= address;
-		END IF;
-    
-    		--write to text process
-    		if write_text_flag = '1' then
-		      	while (rowLine < ram_size-1) loop 
-	
-				write(outLine, ram_block(rowLine));
-				writeline(memory_file, outLine);
-				rowLine := rowLine + 1;
-	
-	    		end loop;
-    		end if;
-	
-  END PROCESS;
+		END IF;	
+	END PROCESS;
 	readdata <= ram_block(read_address_reg);
 
 

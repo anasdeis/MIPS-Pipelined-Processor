@@ -25,7 +25,7 @@ end Fetch;
 architecture behavioral of Fetch is 
 
 -- instruction memory  
-component Instruction_Memory IS
+component Instruction_Memory is
 GENERIC(
 	ram_size : INTEGER := 1024;
 	mem_delay : time := 1 ns;
@@ -39,8 +39,7 @@ port (
 	memread: in std_logic;
 	readdata: out std_logic_vector (31 DOWNTO 0);
 	waitrequest: out std_logic
-);
-end component;
+); end component;
 
 -- mux 
 component mux is
@@ -125,16 +124,18 @@ begin
 		 
 	instr_mem : Instruction_Memory
 	GENERIC map(
-		ram_size => 1024
+		ram_size => 1024,
+		mem_delay => 1 ns,
+		clock_period => 1 ns
 	)
 	port map(
-		clk,
-		writedata,
-		address,
-		memwrite,
-		memread,
-		memory_data,
-		waitrequest
+		clock => clk,
+		writedata => writedata,
+		address => address,
+		memwrite => memwrite,
+		memread => memread,
+		readdata => memory_data,
+		waitrequest => waitrequest
 	);		
 end behavioral;
 

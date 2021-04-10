@@ -117,7 +117,7 @@ begin
 				immediate_out(31 downto 16) <= "0000000000000000";
 			end if;
 			
-		immediate_out(15 downto 0) <= imm(15 downto 0);
+		immediate_out(15 downto 0) <= imm;
 	end process;
 
 

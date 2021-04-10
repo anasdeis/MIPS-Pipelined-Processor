@@ -10,22 +10,20 @@ use ieee.numeric_std.all;
 
 entity Execute is
 port (
-    -- inputs
-    
-    clk : in std_logic;
+    -- INPUTS
 	
     -- From IF
-    instruction_in : std_logic_vector(31 downto 0);
+    address_in : std_logic_vector(31 downto 0);
     
 	 -- From ID
-	 sel_ALU_mux0_in : in std_logic;
-	 sel_ALU_mux1_in : in std_logic;
+	sel_ALU_mux0_in : in std_logic;
+	sel_ALU_mux1_in : in std_logic;
     ALUop_in : in std_logic_vector(4 downto 0);				-- ALU operation
     immediate_in : in std_logic_vector(31 downto 0);		-- immediate 
     read_data0_in : in std_logic_vector(31 downto 0);		-- rs data if shift is '0', otherwise same as read_data_2
     read_data1_in : in std_logic_vector(31 downto 0);		-- rt data
 
-    -- outputs
+    -- OUTPUTS
 
     -- To ID
     control_flow_out : out std_logic := '0'; 	-- control flow operation
@@ -48,7 +46,6 @@ port(
   
 component alu is 
 port (
-    clk : in std_logic;
     input_0 : in std_logic_vector(31 downto 0);
     input_1 : in std_logic_vector(31 downto 0);
     ALUop_in : in std_logic_vector(4 downto 0);
@@ -64,7 +61,7 @@ begin
 	port map(
 		selector => sel_ALU_mux0_in,
 		input_0 => read_data0_in,
-		input_1 => instruction_in,
+		input_1 => address_in,
 		output => mux_result_0
 	);	
 		
@@ -78,7 +75,6 @@ begin
 
 	ex_alu : alu 
 	port map(
-		clk => clk,
 		input_0 => mux_result_0,
 		input_1 => mux_result_1,
 		ALUop_in => ALUop_in,

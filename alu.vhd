@@ -4,12 +4,10 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
  
 entity alu is
 port (
-	clk : in std_logic;
 	input_0 : in std_logic_vector(31 downto 0); -- rs
 	input_1 : in std_logic_vector(31 downto 0); -- rt
 	ALUop_in : in std_logic_vector(4 downto 0); -- there are 27 possible ALU operations, therefore need 5 bits
@@ -18,12 +16,17 @@ port (
 end alu;
  
 architecture behavioral of alu is
+
+--signal hi, lo : std_logic_vector(31 downto 0);
+--signal product : std_logic_vector(63 downto 0);
+
 begin
 
 	compute: process(input_0, input_1, ALUop_in)
 	
-	variable product, quotient, remainder, hi, lo : std_logic_vector(31 downto 0);
-	variable shamnt : INTEGER := 0;
+	variable quotient, remainder, hi, lo : std_logic_vector(31 downto 0);
+	variable product : std_logic_vector(63 downto 0);
+	variable shamnt : INTEGER := to_integer(unsigned(input_1(10 downto 6)));
 	
 	begin
 	
@@ -35,34 +38,34 @@ begin
 		
 		--CASE 1 ADD
 		when "00001" =>
-			output <= input_0 + input_1; 
+			output <= std_logic_vector(signed(input_0) + signed(input_1));
 		 
 		--CASE 2 SUB
 		when "00010" => 
-			output <= input_0 - input_1; 
+			output <= std_logic_vector(signed(input_0) - signed(input_1));
 		 
 		--CASE 3 ADDI
 		when "00011" => 
-			output <= input_0 + input_1;
+			output <= std_logic_vector(signed(input_0) + signed(input_1));
 		 
 		--CASE 4 MULT
 		when "00100" => 
-			 hi := std_logic_vector(to_unsigned(to_integer(unsigned(input_0)) * to_integer(unsigned(input_1)), 64))(63 downto 32);
-			 lo := std_logic_vector(to_unsigned(to_integer(unsigned(input_0)) * to_integer(unsigned(input_1)), 64))(31 downto 0);
-			 product := std_logic_vector(to_unsigned(to_integer(unsigned(input_0)) * to_integer(unsigned(input_1)), product'length));
-			 output <= product;
+			 product := std_logic_vector(signed(input_0) * signed(input_1));
+			 hi := product(63 downto 32);
+			 lo := product(31 downto 0);
+			 output <= lo;
 		 
 		--CASE 5 DIV
 		when "00101" =>  
-			 quotient := std_logic_vector(to_unsigned(to_integer(unsigned(input_0)) / to_integer(unsigned(input_1)), quotient'length));
-			 remainder := std_logic_vector(to_unsigned(to_integer(unsigned(input_0)) mod to_integer(unsigned(input_1)), remainder'length));
-			 lo := quotient;
+			 quotient := std_logic_vector(signed(input_0) / signed(input_1));
+			 remainder := std_logic_vector(signed(input_0) rem signed(input_1));
 			 hi := remainder;
+			 lo := quotient;
 			 output <= quotient;
 
 		--CASE 6 SLT
 		when "00110" =>  
-			 if (input_0 < input_1) then
+			 if (signed(input_0) < signed(input_1)) then
 				output <= x"00000001";
 				else
 				output <= x"00000000";
@@ -70,7 +73,7 @@ begin
 		 
 		--CASE 7 SLTI
 		when "00111" => 
-			if (input_0 < input_1) then
+			if (signed(input_0) < signed(input_1)) then
 				output <= x"00000001";
 			else
 				output <= x"00000000";
@@ -125,6 +128,7 @@ begin
 		-- SLL
 		when "10010" => 
 			output <= std_logic_vector(shift_left(unsigned(input_0), shamnt));
+			--std_logic_vector(to_unsigned(shamnt, output'length));
 			
 		-- SRL
 		when "10011" => 
@@ -138,11 +142,11 @@ begin
 
 		--CASE 21 LW
 		when "10101" =>
-			output <= input_0 + input_1; 
+			output <= std_logic_vector(signed(input_0) + signed(input_1)); 
 
 		--CASE 22 SW
 		when "10110" =>
-			output <= input_0 + input_1;
+			output <= std_logic_vector(signed(input_0) + signed(input_1));
 
 		-- Control-flow
 
@@ -164,7 +168,7 @@ begin
 
 		--CASE 27 JAL
 		when "11011" =>
-			output<= input_0(31 downto 28) & input_1(25 downto 0) & "00";
+			output <= input_0(31 downto 28) & input_1(25 downto 0) & "00";
 
 		when others =>
 			NULL;
