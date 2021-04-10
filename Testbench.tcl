@@ -1,6 +1,6 @@
 proc AddWaves {} {
 	;#Add waves we're interested in to the Wave window
-	 add wave -position end sim:/Pipelined_Processor_tb/clk
+	add wave -position end sim:/Pipelined_Processor_tb/clk
     add wave -position end sim:/Pipelined_Processor_tb/s_writeToRegisterFile
     add wave -position end sim:/Pipelined_Processor_tb/s_writeToMemoryFile
 }

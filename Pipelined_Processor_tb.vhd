@@ -40,13 +40,13 @@ port map(
 	begin
 		wait for clk_period;
 		report "STARTING SIMULATION \n";
-		wait for  100 * clk_period;
+		wait for  9900 * clk_period;
 		s_writeToRegisterFile <= '1';
 		s_writeToMemoryFile <= '1';
-		wait for 3*clk_period;
+		wait for clk_period;
 		s_writeToRegisterFile <= '0';
 		s_writeToMemoryFile <= '0';
-		wait for clk_period;
+
 		wait;		
 	end process;
 end behavioral;

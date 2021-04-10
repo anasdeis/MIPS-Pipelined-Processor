@@ -112,9 +112,6 @@ signal IDEXStructuralStall : std_logic;
 signal EXMEMStructuralStall : std_logic;
 signal structuralStall : std_logic;
 signal pcStall : std_logic;
--- TEST SIGNALS 
-signal muxInput : STD_LOGIC_VECTOR(31 downto 0) := "00000000000000000000000000000000";
-signal selectInput : std_logic := '1';
 
 -- PIPELINE IFID
 --address goes to both IFID and IDEX
@@ -124,7 +121,6 @@ signal IFIDaddress : std_logic_vector(31 downto 0);
 signal IFIDinstruction : std_logic_vector(31 downto 0);
 
 --PIPELINE IDEX
-
 signal IDEXaddress : std_logic_vector(31 downto 0);
 signal IDEXra : std_logic_vector(31 downto 0);
 signal IDEXrb : std_logic_vector(31 downto 0);
@@ -132,7 +128,6 @@ signal IDEXimmediate : std_logic_vector(31 downto 0);
 signal IDEXrd : std_logic_vector (4 downto 0);
 signal IDEXALU1srcO, IDEXALU2srcO, IDEXMemReadO, IDEXMeMWriteO, IDEXRegWriteO, IDEXMemToRegO: std_logic;
 signal IDEXAluOp : std_logic_vector (4 downto 0);
-
 
 -- SIGNALS FOR CONTROLLER
 signal opcodeInput,functInput : std_logic_vector(5 downto 0);
