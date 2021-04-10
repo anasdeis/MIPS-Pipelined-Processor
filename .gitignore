@@ -1,5 +1,6 @@
 *.class
 *.txt
+!/*.txt
 *.qpf
 *.qsf
 *.bak
@@ -10,3 +11,4 @@ simulation/
 *.rpt
 *.wlf
 work/
+*.qws
