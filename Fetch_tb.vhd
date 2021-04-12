@@ -49,8 +49,6 @@ begin
     begin   
 		s_mux <= "00000000000000000000000000000001";
 		s_SEL <= '0';
-		wait for 5 * clk_period;
-		s_SEL <= '1';
 
 		wait;
 		
