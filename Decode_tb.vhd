@@ -71,18 +71,18 @@ begin
 
 	test_process : process	
 	begin
-	   write_file <= '0';
-		write_en <= '1';
+	   s_write_file <= '0';
+		s_write_en <= '1';
       wait for clk_period;
-		rd <= "00100";
-		rd_reg_data <= x"00000001";
-		instruction <= "00100000001000010000000000000001";
+		s_rd <= "00100";
+		s_rd_reg_data <= x"00000001";
+		s_instruction <= "00100000001000010000000000000001";
 		wait for 15*clk_period;
-		rd <= "00010";
-		rd_reg_data <= x"00000111";
-		instruction <= "00010001011010111111111111111111";
+		s_rd <= "00010";
+		s_rd_reg_data <= x"00000111";
+		s_instruction <= "00010001011010111111111111111111";
 		wait for 15*clk_period;
-		write_file <= '1';
+		s_write_file <= '1';
 		
 		wait;
 		
