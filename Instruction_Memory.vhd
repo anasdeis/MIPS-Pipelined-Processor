@@ -7,64 +7,68 @@ USE std.textio.all;
 
 ENTITY Instruction_Memory IS
 	GENERIC(
-	-- might need to change it 
-		ram_size : INTEGER := 1024;
-		mem_delay : time := 1 ns;
+		ram_size : INTEGER := 8192;
+		bit_width : INTEGER := 32;
+		mem_delay : time := 0.1 ns;
 		clock_period : time := 1 ns
 	);
 	PORT (
 		clock: IN STD_LOGIC;
-		writedata: IN STD_LOGIC_VECTOR (31 DOWNTO 0);
+		writedata: IN STD_LOGIC_VECTOR (bit_width-1 DOWNTO 0);
 		address: IN INTEGER RANGE 0 TO ram_size-1;
 		memwrite: IN STD_LOGIC;
 		memread: IN STD_LOGIC;
-		readdata: OUT STD_LOGIC_VECTOR (31 DOWNTO 0);
-		waitrequest: OUT STD_LOGIC
+		readdata: OUT STD_LOGIC_VECTOR (bit_width-1 DOWNTO 0);
+		waitrequest: OUT STD_LOGIC;
+		write_to_mem: IN STD_LOGIC;
+		load_program: IN STD_LOGIC
 	);
 END Instruction_Memory;
 
-ARCHITECTURE rtl OF instruction_Memory IS
-	TYPE MEM IS ARRAY(ram_size-1 downto 0) OF STD_LOGIC_VECTOR(31 DOWNTO 0);
-	SIGNAL ram_block: MEM;
-	SIGNAL read_address_reg: INTEGER RANGE 0 to ram_size-1;
+ARCHITECTURE rtl OF Instruction_Memory IS
+	TYPE MEM IS ARRAY(ram_size-1 downto 0) OF STD_LOGIC_VECTOR(bit_width-1 DOWNTO 0);
+	constant empty_ram_block : MEM := (others => (others => '0'));
+	SIGNAL ram_block: MEM := empty_ram_block; 
 	SIGNAL write_waitreq_reg: STD_LOGIC := '1';
 	SIGNAL read_waitreq_reg: STD_LOGIC := '1';
-	
+
 BEGIN
-	--This is the main section of the SRAM model
-	mem_process: PROCESS (clock)
-	
-	FILE fptr : text;
-	variable file_line : line;
-	variable line_data : std_logic_vector(31 downto 0);
-	variable cnt : integer := 0;
-	
+	-- write to memory.txt
+	write_mem_process: process(write_to_mem)
+		file     fptr  : text;
+		variable file_line : line;
 	BEGIN
-		--This is a cheap trick to initialize the SRAM in simulation
-		IF(now < 1 ps)THEN
-			file_open(fptr,"program.txt.",READ_MODE);
-			
-			-- Read from 'program.txt' outputted by the Assembler
-			while not endfile(fptr) LOOP	
-				readline(fptr,file_line);
-				read(file_line,line_data);
-				ram_block(cnt) <= line_data;
-				cnt := cnt + 1;		
-			end LOOP;
+		if(rising_edge(write_to_mem)) then
+			file_open(fptr, "memory.txt", WRITE_MODE);
+			for i in 0 to ram_size-1 loop
+				write(file_line, ram_block(i));
+				writeline(fptr, file_line);
+			end loop;
+			file_close(fptr);
 		end if;
-		
-		file_close(fptr);
+	end process;
 
-		--This is the actual synthesizable SRAM block
-		IF (clock'event AND clock = '1') THEN
-			IF (memwrite = '1') THEN
-				ram_block(address) <= writedata;
-			END IF;
-		read_address_reg <= address;
-		END IF;
-	END PROCESS;
-	readdata <= ram_block(read_address_reg);
-
+	-- load program.txt
+	read_program_process: process(load_program, memwrite, address, writedata)
+		file 	 fptr: text;
+		variable file_line: line;
+		variable line_data: std_logic_vector(bit_width-1 DOWNTO 0);
+		variable i : integer := 0;
+	begin
+		if(rising_edge(load_program)) then
+			file_open(fptr, "program.txt", READ_MODE);
+			while ((not endfile(fptr)) and (i < ram_size)) loop
+				readline(fptr, file_line);
+				read(file_line, line_data);
+				ram_block(i) <= line_data;
+				i := i + 1;	
+			end loop;
+			file_close(fptr);
+		elsif memwrite = '1' then
+			ram_block(address) <= writedata;
+		end if;	
+	end process;
+	readdata <= ram_block(address);
 
 	--The waitrequest signal is used to vary response time in simulation
 	--Read and write should never happen at the same time.
@@ -83,6 +87,5 @@ BEGIN
 		END IF;
 	END PROCESS;
 	waitrequest <= write_waitreq_reg and read_waitreq_reg;
-
 
 END rtl;
