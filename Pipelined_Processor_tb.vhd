@@ -10,11 +10,11 @@ architecture processor_test of Pipelined_Processor_tb is
     constant clock_period : time := 1 ns;
     COMPONENT Pipelined_Processor is
         generic(
-        ram_size : integer := 8196;
+        ram_size : integer := 8192;
         mem_delay : time := 0.1 ns;
         clock_period : time := 1 ns;
         predictor_bit_width : integer := 2;
-        use_branch_prediction : boolean := false;
+        use_branch_prediction : boolean := true;
         use_static_not_taken : boolean := false
         );
         port (
@@ -58,8 +58,8 @@ architecture processor_test of Pipelined_Processor_tb is
 begin
 
 c1 : Pipelined_Processor GENERIC MAP (
-    use_branch_prediction => use_branch_prediction,
-    use_static_not_taken => use_static_not_taken
+    use_branch_prediction => false,
+    use_static_not_taken => true
     )
     PORT MAP (
     clk,
