@@ -1,483 +1,598 @@
--- Entity: Pipelined_Processor
--- Authors: Anas Deis, Albert Assouad, Barry Chen
--- Date: 04/16/2021
+-- Group 7: Anas Deis, Albert Assouad, Barry Chen
+-- Date: 16/4/2021
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.INSTRUCTION_TOOLS.all;
 
+-- Pipelined_Processor
 entity Pipelined_Processor is
-port(
-	clk : in std_logic;
-	writeToRegisterFile : in std_logic := '0';
-	writeToMemoryFile : in std_logic := '0';
-		
-	out_IDEXStructuralStall : out std_logic;
-	out_EXMEMStructuralStall :  out std_logic;
-	out_structuralStall :  out std_logic;
-	out_pcStall :  out std_logic;
-
-	-- PIPELINE IFID
-	--address goes to both IFID and IDEX
-	out_address : out std_logic_vector(31 downto 0);
-	out_instruction : out std_logic_vector(31 downto 0);
-	out_IFIDaddress : out  std_logic_vector(31 downto 0);
-	out_IFIDinstruction : out  std_logic_vector(31 downto 0);
-
-	--PIPELINE IDEX
-	out_IDEXaddress : out  std_logic_vector(31 downto 0);
-	out_IDEXra : out  std_logic_vector(31 downto 0);
-	out_IDEXrb : out  std_logic_vector(31 downto 0);
-	out_IDEXimmediate : out  std_logic_vector(31 downto 0);
-	out_IDEXrd : out  std_logic_vector (4 downto 0);
-	out_IDEXALU1srcO, out_IDEXALU2srcO, out_IDEXMemReadO, out_IDEXMeMWriteO, out_IDEXRegWriteO, out_IDEXMemToRegO: out  std_logic;
-	out_IDEXAluOp : out  std_logic_vector (4 downto 0);
-
-	-- S FOR CONTROLLER
-	out_opcodeInput,out_functInput : out  std_logic_vector(5 downto 0);
-	out_ALU1srcO,out_ALU2srcO,out_MemReadO,out_MemWriteO,out_RegWriteO,out_MemToRegO,out_RType,out_Jtype,out_Shift: out  std_logic;
-	out_ALUOp : out  std_logic_vector(4 downto 0);
-
-	-- S FOR REGISTERS
-	out_rs,out_rt,out_rd,out_WBrd : out  std_logic_vector (4 downto 0);
-	out_rd_data: out  std_logic_vector(31 downto 0);
-	out_write_enable : out  std_logic;
-	out_ra,out_rb : out  std_logic_vector(31 downto 0);
-	out_shamnt : out  std_logic_vector(4 downto 0);
-
-	out_immediate : out  std_logic_vector(15 downto 0); 
-	out_immediate_out : out  std_logic_vector(31 downto 0);
-
-	-- S FOR EXECUTE STAGE  
-	out_muxOutput1 : out  std_logic_vector(31 downto 0);
-	out_muxOutput2 : out  std_logic_vector(31 downto 0);
-	out_aluOutput : out  std_logic_vector(31 downto 0);
-	out_zeroOutput : out  std_logic;
-
-	-- S FOR EXMEM
-	out_EXMEMBranch : out  std_logic; -- need the zero variable 
-	out_ctrl_jal : out  std_logic;
-	out_EXMEMaluOutput : out  std_logic_vector(31 downto 0);
-	out_EXMEMregisterOutput : out  std_logic_vector(31 downto 0);
-	out_EXMEMrd : out  std_logic_vector(4 downto 0);
-	out_EXMEMMemReadO, out_EXMEMMeMWriteO, out_EXMEMRegWriteO, out_EXMEMMemToRegO: out  std_logic;
-
-	-- MEM S 
-	out_MEMWBmemOutput : out  std_logic_vector(31 downto 0);
-	out_MEMWBaluOutput : out  std_logic_vector(31 downto 0);
-	out_MEMWBrd : out  std_logic_vector(4 downto 0);
-	out_memtoReg : out  std_logic;
-	out_regWrite : out  std_logic
-);
-end Pipelined_Processor;
+	generic(
+		ram_size : integer := 8192;
+		mem_delay : time := 10 ns;
+		clk_period : time := 1 ns
+	);
+	port(
+		clk : in std_logic;
+		initialize : in std_logic := '0'; 
+		write_file : in std_logic := '0';
+		register_file : out REGISTER_BLOCK
+	);
+	constant bit_width : integer := 32;
+end Pipelined_Processor ;
 
 architecture behavioral of Pipelined_Processor is
-
--- Stage 1 : IF
-component Fetch is
-port(
-	clk : in std_logic;
-	fetch_sel : in std_logic;
-	structural_stall_in : in std_logic;
-	pc_stall_in : in std_logic;	
-	mux_in : in std_logic_vector(31 downto 0);    
-	next_address_out : out std_logic_vector(31 downto 0); 
-	instruction_out  : out std_logic_vector(31 downto 0)  
-); end component;
-
--- Stage 2 : ID		
-component Decode is
-port(
-	clk : in std_logic;
-	instruction_in : in std_logic_vector (31 downto 0);  
-	write_file_en : in std_logic;						 
-	write_en_in : in std_logic; 						 
-	rd_in : in std_logic_vector (4 downto 0);	 		  
-	rd_reg_data_in : in std_logic_vector (31 downto 0);   
-	rs_reg_data_out : out std_logic_vector (31 downto 0); 
-	rt_reg_data_out : out std_logic_vector (31 downto 0); 
-	R_Type_out : out std_logic; 
-	J_Type_out : out std_logic; 
-	shift_out : out std_logic;
-	MemRead_out : out std_logic; 
-	MemWrite_out : out std_logic; 
-	MemToReg_out : out std_logic;	
-	RegWrite_out : out std_logic;
-	structural_hazard_out : out std_logic; 
-	branch_in : in std_logic; 
-	old_branch_in : in std_logic;
-	ALUOp_out : out std_logic_vector(4 downto 0); 
-	sel_ALU_mux0_out : out std_logic; 
-	sel_ALU_mux1_out : out std_logic; 
-	immediate_out : out std_logic_vector (31 downto 0)
-); end component;
-
--- Stage 3 : EX
-component Execute is
-port(
-    address_in : std_logic_vector(31 downto 0);
-	sel_ALU_mux0_in : in std_logic;
-	sel_ALU_mux1_in : in std_logic;
-    ALUop_in : in std_logic_vector(4 downto 0);				
-    immediate_in : in std_logic_vector(31 downto 0);		
-    read_data0_in : in std_logic_vector(31 downto 0);		
-    read_data1_in : in std_logic_vector(31 downto 0);		
-    control_flow_out : out std_logic := '0'; 
-    alu_result_out : out std_logic_vector(31 downto 0) 		
-); end component;
-
--- Stage 4 : MEM
-component Memory is
-GENERIC(
-	ramsize : INTEGER := 8192;
-	memdelay : time := 10 ns;
-	clockperiod : time := 1 ns
-);
-port (
-	clk : in std_logic;
-	jal_in: in std_logic;			
-	write_mem_file : in std_logic;	
-	RegWrite_in: in std_logic;		
-	MemToReg_in: in std_logic;
-	mem_store : in std_logic;
-	mem_load: in std_logic;	
-	alu_in : in std_logic_vector (31 downto 0);		
-	mem_data_in: in std_logic_vector (31 downto 0); 
-	rd_in: in std_logic_vector (4 downto 0);		
-	RegWrite_out: out std_logic;
-	MemToReg_out: out std_logic;
-	alu_out : out std_logic_vector (31 downto 0);
-	mem_data_out: out std_logic_vector (31 downto 0);
-	rd_out: out std_logic_vector (4 downto 0)	
-); end component;
-
--- Stage 5 : WB
-component Write_Back is
-port (
-	mem_op_en_in: in std_logic;					 
-	register_file_en_in: in std_logic;		     
-	ex_in : in std_logic_vector (31 downto 0);	  
-	mem_in: in std_logic_vector (31 downto 0);	
-	ir_in: in std_logic_vector (4 downto 0);      
-	register_file_en_out: out std_logic;		  
-	mux_out : out std_logic_vector (31 downto 0);
-	ir_out: out std_logic_vector (4 downto 0)	 
-); end component;
-
--- STALL SIGNALS 
-signal IDEXStructuralStall : std_logic;
-signal EXMEMStructuralStall : std_logic;
-signal structuralStall : std_logic;
-signal pcStall : std_logic;
-
--- PIPELINE IFID
---address goes to both IFID and IDEX
-signal address : std_logic_vector(31 downto 0);
-signal instruction : std_logic_vector(31 downto 0);
-signal IFIDaddress : std_logic_vector(31 downto 0);
-signal IFIDinstruction : std_logic_vector(31 downto 0);
-
---PIPELINE IDEX
-signal IDEXaddress : std_logic_vector(31 downto 0);
-signal IDEXra : std_logic_vector(31 downto 0);
-signal IDEXrb : std_logic_vector(31 downto 0);
-signal IDEXimmediate : std_logic_vector(31 downto 0);
-signal IDEXrd : std_logic_vector (4 downto 0);
-signal IDEXALU1srcO, IDEXALU2srcO, IDEXMemReadO, IDEXMeMWriteO, IDEXRegWriteO, IDEXMemToRegO: std_logic;
-signal IDEXAluOp : std_logic_vector (4 downto 0);
-
--- SIGNALS FOR CONTROLLER
-signal opcodeInput,functInput : std_logic_vector(5 downto 0);
-signal ALU1srcO,ALU2srcO,MemReadO,MemWriteO,RegWriteO,MemToRegO,RType,Jtype,Shift: std_logic;
-signal ALUOp : std_logic_vector(4 downto 0);
-
--- SIGNALS FOR REGISTERS
-signal rs,rt,rd,WBrd : std_logic_vector (4 downto 0);
-signal rd_data: std_logic_vector(31 downto 0);
-signal write_enable : std_logic;
-signal ra,rb : std_logic_vector(31 downto 0);
-signal shamnt : std_logic_vector(4 downto 0);
-
-signal immediate : std_logic_vector(15 downto 0); 
-signal immediate_out : std_logic_vector(31 downto 0);
-
--- SIGNALS FOR EXECUTE STAGE  
-signal muxOutput1 : std_logic_vector(31 downto 0);
-signal muxOutput2 : std_logic_vector(31 downto 0);
-signal aluOutput : std_logic_vector(31 downto 0);
-signal zeroOutput : std_logic;
-
--- SIGNALS FOR EXMEM
-signal EXMEMBranch : std_logic; -- need the zero variable 
-signal ctrl_jal : std_logic;
-signal EXMEMaluOutput : std_logic_vector(31 downto 0);
-signal EXMEMregisterOutput : std_logic_vector(31 downto 0);
-signal EXMEMrd : std_logic_vector(4 downto 0);
-signal EXMEMMemReadO, EXMEMMeMWriteO, EXMEMRegWriteO, EXMEMMemToRegO: std_logic;
-
--- MEM SIGNALS 
-signal MEMWBmemOutput : std_logic_vector(31 downto 0);
-signal MEMWBaluOutput : std_logic_vector(31 downto 0);
-signal MEMWBrd : std_logic_vector(4 downto 0);
-signal memtoReg : std_logic;
-signal regWrite : std_logic;
-
-begin
-
-	IFS : Fetch
-	port map(
-		clk => clk,
-		fetch_sel => EXMEMBranch,
-		structural_stall_in => structuralStall,
-		pc_stall_in => pcStall,	
-		mux_in => EXMEMaluOutput, 
-		next_address_out => address,
-		instruction_out => instruction
-	);
-
-	ID : Decode
-	port map(
-		clk => clk,
-		instruction_in => IFIDinstruction,
-		write_file_en => writeToRegisterFile,					 
-		write_en_in => write_enable,					 
-		rd_in => WBrd,	 		  
-		rd_reg_data_in => rd_data,   
-		rs_reg_data_out => ra,
-		rt_reg_data_out => rb, 
-		R_Type_out => RType,
-		J_Type_out => JType,
-		shift_out => Shift,
-		MemRead_out => MemReadO,
-		MemWrite_out => MemWriteO, 
-		MemToReg_out => MemToRegO,
-		RegWrite_out => RegWriteO,
-		structural_hazard_out => IDEXStructuralStall,
-		branch_in => zeroOutput,
-		old_branch_in => EXMEMBranch,
-		ALUOp_out => ALUOp,
-		sel_ALU_mux0_out => ALU1srcO,
-		sel_ALU_mux1_out => ALU2srcO,
-		immediate_out => immediate_out
-	);
-
-	EX : Execute
-	port map(
-		 address_in => IDEXaddress,
-		sel_ALU_mux0_in => IDEXALU1srcO,
-		sel_ALU_mux1_in => IDEXALU2srcO,
-		 ALUop_in => IDEXAluOp,			
-		 immediate_in => IDEXimmediate,		
-		 read_data0_in => IDEXra,		
-		 read_data1_in => IDEXrb,		
-		 control_flow_out => zeroOutput,
-		 alu_result_out => aluOutput
-	); 
-
-	MEM : Memory
-	port map(
-		clk => clk,
-		jal_in => ctrl_jal,		
-		write_mem_file => writeToMemoryFile,
-		RegWrite_in => EXMEMRegWriteO,		
-		MemToReg_in => EXMEMMemToRegO,
-		mem_store => EXMEMMemWriteO,
-		mem_load => EXMEMMemReadO,	
-		alu_in => EXMEMaluOutput,		
-		mem_data_in => EXMEMregisterOutput,
-		rd_in => EXMEMrd,		
-		RegWrite_out => regWrite,
-		MemToReg_out => memtoReg,
-		alu_out => MEMWBaluOutput,
-		mem_data_out => MEMWBmemOutput, 
-		rd_out => MEMWBrd
-	); 
-
-	WB: Write_Back
-	port map(
-		mem_op_en_in => memtoReg,				 
-		register_file_en_in => regWrite,	     
-		ex_in => MEMWBaluOutput,
-		mem_in => MEMWBmemOutput,
-		ir_in => MEMWBrd,
-		register_file_en_out => write_enable,  
-		mux_out => rd_data,
-		ir_out => WBrd
-	);
-
-	process(EXMEMStructuralStall)
-	begin
-		if EXMEMStructuralStall = '1' then 
-			pcStall <= '1';
-		else 
-			pcStall <= '0';
-		end if;
-
-	end process;
-
-	process (clk)
-	begin
-
-		if (clk'event and clk = '1') then
-		--PIPELINED VALUE 
-		--IFID 
-		IFIDaddress <= address;
-		IFIDinstruction <= instruction;
-
-		-- IDEX
-		IDEXaddress <= IFIDaddress;
-		IDEXrb <= rb;
-
-		--FOR IMMEDIATE VALUES
-		if RType = '1' then
-			IDEXrd <= rd;
-		-- FOR JAL
-		elsif ALUOP = "11010" then
-			IDEXrd <= "11111";
-		else
-			IDEXrd <= rt;
-		end if;
-
-		--FOR SHIFT INSTRUCTIONS
-		if Shift = '1' then
-			IDEXra <= rb;
-		else
-			IDEXra <= ra;
-		end if;
-
-		--FOR JUMP INSTRUCTIONS
-		if JType = '1' then
-			IDEXimmediate <= "000000" & IFIDinstruction(25 downto 0);
-		else
-			IDEXimmediate <= immediate_out;
-		end if;
-
-		IDEXALU1srcO <= ALU1srcO;
-		IDEXALU2srcO <= ALU2srcO;
-		IDEXMemReadO <= MemReadO;
-		IDEXMeMWriteO <= MemWriteO;
-		IDEXRegWriteO <= RegWriteO;
-		IDEXMemToRegO <= MemToRegO;
-		IDEXAluOp <= ALUOp;
-
+	-- COMPONENTS DECLARATION
+    -- IF
+	component Fetch is
+		generic(
+			ram_size : integer := ram_size;
+			bit_width : integer := bit_width
+		);
+		port (
+			clk : in std_logic;
+			reset : in std_logic;
+			stall_in : in std_logic;  -- hazard stall
+			branch_target_in : in integer;  -- combined with a condition test boolean to enable loading the branch target address into the PC
+			branch_condition_in : in std_logic; -- condition test boolean
+			instruction_out : out INSTRUCTION;
+			PC_out : out integer;
 			
-		--EXMEM 
-		EXMEMBranch <= zeroOutput; 
-		EXMEMrd <= IDEXrd;
-		EXMEMMemReadO <= IDEXMemReadO;
-		EXMEMMeMWriteO <= IDEXMeMWriteO;
-		EXMEMRegWriteO <= IDEXRegWriteO;
-		EXMEMMemToRegO <= IDEXMemToRegO;
-		EXMEMaluOutput <= aluOutput;
-		EXMEMStructuralStall <= IDEXStructuralStall;
-		structuralStall <= EXMEMStructuralStall;
-		--FOR JAL
-		if IDEXAluOp = "11010" then
-			EXMEMregisterOutput <= IDEXaddress;
-			ctrl_jal <= '1';
-		else
-			EXMEMregisterOutput <= IDEXrb;
-			ctrl_jal <= '0';
-		end if;
+			-- Memory
+			m_addr : out integer range 0 to ram_size-1;
+			m_read : out std_logic;
+			m_readdata : in std_logic_vector (bit_width-1 downto 0)
+		); 
+	end component;
+
+    -- IF/ID
+	component IF_ID is
+		port(
+			clk: in std_logic;
+			stall_in: in std_logic;
+			PC_in: in integer;
+			PC_out: out integer;
+			instruction_in: in INSTRUCTION;
+			instruction_out: out INSTRUCTION
+		); 
+	end component;
+
+    -- ID
+    component Decode is
+		port(
+			-- INPUTS
+			clk : in std_logic;
+			reset : in std_logic;       -- reset register file
+			write_en_in : in std_logic;	-- enable writing to register	
 			
-		end if ;
-		
-		
-----------------------------------------------------------------
-	-- STALL SIGNALS 
-	out_IDEXStructuralStall <= IDEXStructuralStall;
-	out_EXMEMStructuralStall <= EXMEMStructuralStall;
-	out_structuralStall <= structuralStall;
-	out_pcStall <= pcStall;
+			-- Hazard / Branching
+			IR_in : in INSTRUCTION_ARRAY;  -- Instruction Register holds the instruction currently being decoded.
+			stall_in : in std_logic;  -- stall if instruction from IF uses a register that is currently busy
+			
+			-- From IF/ID 
+			PC_in : in integer;
+			instruction_in : in INSTRUCTION;
+			
+			-- From WB
+			wb_instr_in : in INSTRUCTION;
+			wb_data_in : in std_logic_vector(63 downto 0);
+			
+			-- OUTPUTS
+			-- Hazard / Branching
+			branch_target_out : out std_logic_vector(bit_width-1 downto 0);
+			stall_out : out std_logic;
+			
+			-- To ID/EX
+			PC_out : out integer;
+			instruction_out : out INSTRUCTION;
+			rs_data : out std_logic_vector(bit_width-1 downto 0);	   -- data associated with the register index of rs
+			rt_data : out std_logic_vector(bit_width-1 downto 0);	   -- data associated with the register index of rt
+			immediate_out : out std_logic_vector(bit_width-1 downto 0); -- sign extendeded immediate value
+			
+			-- To Pipeline
+			register_file_out : out REGISTER_BLOCK
+		); 
+	end component;
 
-	-- PIPELINE IFID
-	--address goes to both IFID and IDEX
-	out_address <= address;
-	out_instruction <= instruction;
-	out_IFIDaddress <= IFIDaddress;
-	out_IFIDinstruction <= IFIDinstruction;
-
-	--PIPELINE IDEX
-	out_IDEXaddress <= IDEXaddress;
-	out_IDEXra <= IDEXra;
-	out_IDEXrb <= IDEXrb;
-	out_IDEXimmediate <= IDEXimmediate;
-	out_IDEXrd <= IDEXrd;
-	out_IDEXALU1srcO <= IDEXALU1srcO;
-	out_IDEXALU2srcO <= IDEXALU2srcO;
-	out_IDEXMemReadO <= IDEXMemReadO;
-	out_IDEXMeMWriteO <= IDEXMeMWriteO;
-	out_IDEXRegWriteO <= IDEXRegWriteO;
-	out_IDEXMemToRegO <= IDEXMemToRegO;
-	out_IDEXAluOp <= IDEXAluOp;
-
-	-- S FOR CONTROLLER
-	out_opcodeInput <= opcodeInput;
-	out_functInput <= functInput;
-	out_ALU1srcO <= ALU1srcO;
-	out_ALU2srcO <= ALU2srcO;
-	out_MemReadO <= MemReadO;
-	out_MemWriteO <= MemWriteO;
-	out_RegWriteO <= RegWriteO;
-	out_MemToRegO <= MemToRegO;
-	out_RType <= RType;
-	out_Jtype <= Jtype;
-	out_Shift <= Shift; 
-	out_ALUOp <= ALUOp;
-
-	-- S FOR REGISTERS
-	out_rs <= rs;
-	out_rt <= rt;
-	out_rd <= rd;
-	out_WBrd <= WBrd;
-	out_rd_data <= rd_data;
-	out_write_enable <= write_enable;
-	out_ra <= ra;
-	out_rb <= rb;
-	out_shamnt <= shamnt;
-
-	out_immediate <= immediate;
-	out_immediate_out <= immediate_out;
-
-	-- S FOR EXECUTE STAGE  
-	out_muxOutput1 <= muxOutput1;
-	out_muxOutput2 <= muxOutput2;
-	out_aluOutput <= aluOutput;
-	out_zeroOutput <= zeroOutput;
-
-	-- S FOR EXMEM
-	out_EXMEMBranch <= EXMEMBranch;
-	out_ctrl_jal <= ctrl_jal;
-	out_EXMEMaluOutput <= EXMEMaluOutput;
-	out_EXMEMregisterOutput <= EXMEMregisterOutput;
-	out_EXMEMrd <= EXMEMrd;
-	out_EXMEMMemReadO <= EXMEMMemReadO;
-	out_EXMEMMeMWriteO <= EXMEMMeMWriteO; 
-	out_EXMEMRegWriteO <= EXMEMRegWriteO; 
-	out_EXMEMMemToRegO <= EXMEMMemToRegO;
-
-	-- MEM S 
-	out_MEMWBmemOutput <= MEMWBmemOutput;
-	out_MEMWBaluOutput <= MEMWBaluOutput;
-	out_MEMWBrd <= MEMWBrd;
-	out_memtoReg <= memtoReg;
-	out_regWrite <= regWrite;
-
-----------------------------------------------------------------
-		
-	end process;
+    -- ID/EX
+	component ID_EX is
+		port(
+			clk: in std_logic;
+			PC_in: in integer;
+			PC_out: out integer;
+			instruction_in: in INSTRUCTION;
+			instruction_out: out INSTRUCTION;
+			ra_in: in std_logic_vector(bit_width-1 downto 0);
+			ra_out: out std_logic_vector(bit_width-1 downto 0);
+			rb_in: in std_logic_vector(bit_width-1 downto 0);
+			rb_out: out std_logic_vector(bit_width-1 downto 0);
+			immediate_in: in std_logic_vector(bit_width-1 downto 0);
+			immediate_out: out std_logic_vector(bit_width-1 downto 0)
+		); 
+	end component;
+    
+    -- Execute
+    component Execute is
+		port (
+			-- INPUTS
+			PC_in : in integer; 
+			instruction_in : in INSTRUCTION;
+			ra_in : in std_logic_vector(bit_width-1 downto 0);
+			rb_in : in std_logic_vector(bit_width-1 downto 0);
+			immediate_in : in std_logic_vector(bit_width-1 downto 0);
+			
+			-- OUTPUTS
+			PC_out : out integer;
+			instruction_out : out INSTRUCTION;
+			branch_out : out std_logic;
+			branch_target_out : out std_logic_vector(bit_width-1 downto 0);
+			rb_out : out std_logic_vector(bit_width-1 downto 0);
+			alu_out : out std_logic_vector(63 downto 0)
+		); 
+	end component;
 	
-	-- controller values
-	opcodeInput <= IFIDinstruction(31 downto 26);
-	functInput <= IFIDinstruction(5 downto 0);
-	-- register values
-	rs <= IFIDinstruction(25 downto 21);
-	rt <= IFIDinstruction(20 downto 16);
-	rd <= IFIDinstruction(15 downto 11);
-	shamnt <= IFIDinstruction(10 downto 6);
-	-- EXTENDED
-	immediate <= IFIDinstruction(15 downto 0);
-	-- MIGHT NEED TO PUT WRITE ENABLE HERE LATER 
--- AND JUMP ADDRESS HERE 
+	-- EX/MEM
+	component EX_MEM is
+		port (
+			clk: in std_logic;
+			PC_in: in integer;
+			PC_out: out integer;
+			instruction_in: in INSTRUCTION;
+			instruction_out: out INSTRUCTION;
+			branch_in: in std_logic;
+			branch_out: out std_logic;
+			branch_target_in : in std_logic_vector(bit_width-1 downto 0);
+			branch_target_out : out std_logic_vector(bit_width-1 downto 0);
+			rb_in: in std_logic_vector(bit_width-1 downto 0);
+			rb_out: out std_logic_vector(bit_width-1 downto 0);
+			alu_in: in std_logic_vector(63 downto 0);
+			alu_out: out std_logic_vector(63 downto 0)
+		); 
+	end component;
 
+    -- Memory
+    component Memory is
+		generic(
+			ram_size : integer := ram_size;
+			bit_width : integer := bit_width
+		);
+		port(
+			-- INPUTS
+			instruction_in : in INSTRUCTION;
+			alu_in : in std_logic_vector(63 downto 0);	
+			rb_in : in std_logic_vector(bit_width-1 downto 0);
+			
+			-- OUTPUTS
+			instruction_out : out INSTRUCTION;
+			alu_out : out std_logic_vector(63 downto 0);        
+			memory_data : out std_logic_vector(bit_width-1 downto 0);
+			
+			-- Memory
+			m_write_data : out std_logic_vector (bit_width-1 downto 0);
+			m_addr : out integer range 0 to ram_size-1;   
+			m_write : out std_logic;
+			m_read : out std_logic;
+			m_readdata : in std_logic_vector (bit_width-1 downto 0)
+    ); 
+	end component;
+
+    -- MEM/WB
+    component MEM_WB is
+		port(
+			clk: in std_logic;
+			instruction_in: in INSTRUCTION;
+			instruction_out: out INSTRUCTION;
+			alu_in: in std_logic_vector(63 downto 0);
+			alu_out: out std_logic_vector(63 downto 0);
+			mem_in: in std_logic_vector(bit_width-1 downto 0);
+			mem_out: out std_logic_vector(bit_width-1 downto 0)
+		);
+    end component;
+
+	-- Write_Back
+    component Write_Back is
+		port(
+			-- INPUTS
+			instruction_in : in instruction;
+			memory_data_in : in std_logic_vector(bit_width-1 downto 0);
+			alu_in : in std_logic_vector(63 downto 0);
+					
+			-- OUTPUTS
+			instruction_out : out instruction;
+			wb_data_out : out std_logic_vector(63 downto 0)
+		); 
+	end component;
+    
+	-- Instruction_Memory
+    component Instruction_Memory is
+		generic(
+			ram_size : integer := ram_size;
+			bit_width : integer := bit_width;
+			mem_delay : time := mem_delay;
+			clk_period : time := clk_period
+		);
+		port (
+			clk: in std_logic;
+			writedata: in std_logic_vector (bit_width-1 downto 0) := (others => '0');
+			address: in integer RANGE 0 TO ram_size-1;
+			memwrite: in std_logic := '0';
+			memread: in std_logic;
+			readdata: out std_logic_vector (bit_width-1 downto 0);
+			write_to_mem: in std_logic := '0';
+			load_program: in std_logic := '0'
+		);
+	end component;
+    
+    -- SIGNALS
+    -- Fetch
+    signal IF_reset : std_logic;
+	signal IF_stall : std_logic;
+    signal IF_branch_target : integer;
+    signal IF_branch_condition : std_logic;
+    signal IF_instruction : INSTRUCTION;
+    signal IF_PC : integer;
+    signal IF_m_addr : integer;
+    signal IF_m_read : std_logic;
+    signal IF_m_readdata : std_logic_vector (bit_width-1 downto 0);
+    
+    -- IF/ID
+	signal IF_ID_register_stall: std_logic;
+    signal IF_ID_PC_in: integer;
+    signal IF_ID_PC_out: integer;
+    signal IF_ID_instruction_in: INSTRUCTION;
+    signal IF_ID_instruction_out: INSTRUCTION;
+
+    -- Decode
+	signal ID_reset : std_logic;
+	signal ID_write_en : std_logic;
+	signal ID_IR : INSTRUCTION_ARRAY := (others => NO_OP_INSTRUCTION);
+	signal ID_stall_in : std_logic;
+    signal ID_PC_in : integer;
+    signal ID_instruction_in : INSTRUCTION;
+    signal ID_wb_instr : INSTRUCTION;
+    signal ID_wb_data : std_logic_vector(63 downto 0);
+	signal ID_branch_target : std_logic_vector(bit_width-1 downto 0);	
+    signal ID_stall_out : std_logic;
+	signal ID_PC_out : integer;
+	signal ID_instruction_out : INSTRUCTION;
+    signal ID_ra : std_logic_vector(bit_width-1 downto 0);
+    signal ID_rb : std_logic_vector(bit_width-1 downto 0);
+    signal ID_immediate : std_logic_vector(bit_width-1 downto 0);
+	signal ID_register_file : REGISTER_BLOCK;
+
+    -- ID/EX
+    signal ID_EX_PC_in: integer;
+    signal ID_EX_PC_out:  integer;
+    signal ID_EX_instruction_in: INSTRUCTION;
+    signal ID_EX_instruction_out:  INSTRUCTION;
+    signal ID_EX_ra_in: std_logic_vector(bit_width-1 downto 0);
+    signal ID_EX_ra_out:  std_logic_vector(bit_width-1 downto 0);
+    signal ID_EX_rb_in: std_logic_vector(bit_width-1 downto 0);
+    signal ID_EX_rb_out:  std_logic_vector(bit_width-1 downto 0);
+	signal ID_EX_immediate_in: std_logic_vector(bit_width-1 downto 0);
+    signal ID_EX_immediate_out:  std_logic_vector(bit_width-1 downto 0);
+
+    -- Execute
+    signal EX_PC_in : integer; 
+    signal EX_instruction_in : INSTRUCTION;
+    signal EX_ra : std_logic_vector(bit_width-1 downto 0);
+    signal EX_rb : std_logic_vector(bit_width-1 downto 0);
+    signal EX_immediate : std_logic_vector(bit_width-1 downto 0);
+    signal EX_PC_out : integer;
+    signal EX_instruction_out : INSTRUCTION;
+    signal EX_branch : std_logic;
+	signal EX_branch_target : std_logic_vector(bit_width-1 downto 0);
+	signal EX_rb_out : std_logic_vector(bit_width-1 downto 0);
+    signal EX_alu : std_logic_vector(63 downto 0);
+    
+    -- EX/MEM
+    signal EX_MEM_PC_in: integer;
+    signal EX_MEM_PC_out: integer;
+    signal EX_MEM_instruction_in: INSTRUCTION;
+    signal EX_MEM_instruction_out: INSTRUCTION;
+    signal EX_MEM_branch_in: std_logic;
+    signal EX_MEM_branch_out: std_logic;
+    signal EX_MEM_alu_in: std_logic_vector(63 downto 0);
+    signal EX_MEM_alu_out: std_logic_vector(63 downto 0);
+    signal EX_MEM_branch_target_in : std_logic_vector(bit_width-1 downto 0);
+    signal EX_MEM_branch_target_out : std_logic_vector(bit_width-1 downto 0);
+    signal EX_MEM_rb_in: std_logic_vector(bit_width-1 downto 0);
+    signal EX_MEM_rb_out: std_logic_vector(bit_width-1 downto 0);
+
+    -- MEM
+    signal MEM_instruction_in : INSTRUCTION;
+	signal MEM_alu_in : std_logic_vector(63 downto 0);
+	signal MEM_rb : std_logic_vector(bit_width-1 downto 0);
+    signal MEM_instruction_out : INSTRUCTION;
+    signal MEM_alu_out : std_logic_vector(63 downto 0);
+    signal MEM_memory_data : std_logic_vector(bit_width-1 downto 0);
+    signal MEM_m_write_data : std_logic_vector (bit_width-1 downto 0);
+	signal MEM_m_addr : integer range 0 to ram_size-1;
+	signal MEM_m_write : std_logic;
+    signal MEM_m_read : std_logic;
+    signal MEM_m_readdata : std_logic_vector (bit_width-1 downto 0);        
+
+    -- MEM/WB
+    signal MEM_WB_instruction_in: INSTRUCTION;
+    signal MEM_WB_instruction_out: INSTRUCTION;
+    signal MEM_WB_alu_in: std_logic_vector(63 downto 0);
+    signal MEM_WB_alu_out: std_logic_vector(63 downto 0);
+    signal MEM_WB_mem_in: std_logic_vector(bit_width-1 downto 0);
+    signal MEM_WB_mem_out: std_logic_vector(bit_width-1 downto 0);
+
+    -- WB
+	signal WB_instruction_in : INSTRUCTION;
+    signal WB_mem_data : std_logic_vector(bit_width-1 downto 0);
+    signal WB_alu : std_logic_vector(63 downto 0);
+    signal WB_instruction_out : INSTRUCTION;
+	signal WB_data : std_logic_vector(63 downto 0);
+
+    -- load/write memory
+    signal load_memory : std_logic := '0';
+    signal write_memory : std_logic := '0';
+
+	-- control stall
+    signal control_stall : std_logic := '0';
+	
+begin
+	-- COMPONENTS MAPPING
+    IFS : Fetch
+    generic map(
+        ram_size => ram_size,
+        bit_width => bit_width
+    ) 
+    port map(
+        clk => clk,
+        reset => IF_reset,
+        stall_in => IF_stall,
+        branch_target_in => IF_branch_target,
+        branch_condition_in => IF_branch_condition,
+        instruction_out => IF_instruction,
+        PC_out => IF_PC,
+        m_addr => IF_m_addr,
+        m_read => IF_m_read,
+		m_readdata => IF_m_readdata
+    );
+
+    load_mem : Instruction_Memory 
+	generic map(
+        ram_size => ram_size,
+        bit_width => bit_width
+    )
+    port map(
+        clk => clk,
+        address => IF_m_addr,
+        memread => IF_m_read,
+        readdata => IF_m_readdata,
+        load_program => load_memory
+    );
+
+    IF_ID_REG : IF_ID
+	port map(
+        clk => clk,
+		stall_in => IF_ID_register_stall,
+        PC_in => IF_ID_PC_in,
+        PC_out => IF_ID_PC_out,
+        instruction_in => IF_ID_instruction_in,
+        instruction_out => IF_ID_instruction_out
+	);
+
+    ID : Decode 
+    port map(
+        clk => clk,
+		reset => ID_reset,
+		write_en_in => ID_write_en,
+		IR_in => ID_IR,
+        stall_in => ID_stall_in,
+        PC_in => ID_PC_in,
+        instruction_in => ID_instruction_in,
+        wb_instr_in => ID_wb_instr,
+        wb_data_in => ID_wb_data,
+		stall_out => ID_stall_out,
+        branch_target_out => ID_branch_target,
+		PC_out => ID_PC_out,
+        instruction_out => ID_instruction_out,
+        rs_data => ID_ra,
+        rt_data => ID_rb,
+        immediate_out => ID_immediate,
+		register_file_out => ID_register_file
+    );
+
+    ID_EX_REG : ID_EX 
+	port map(
+        clk => clk,
+        PC_in => ID_EX_PC_in,
+        PC_out => ID_EX_PC_out,
+        instruction_in => ID_EX_instruction_in,
+        instruction_out => ID_EX_instruction_out,
+        ra_in => ID_EX_ra_in,
+        ra_out => ID_EX_ra_out,
+        rb_in => ID_EX_rb_in,
+        rb_out => ID_EX_rb_out,
+		immediate_in => ID_EX_immediate_in,
+        immediate_out => ID_EX_immediate_out
+    );
+
+    EX : Execute  
+	port map(
+		PC_in => EX_PC_in,
+		instruction_in => EX_instruction_in,
+		ra_in => EX_ra,
+		rb_in => EX_rb,
+		immediate_in => EX_immediate,
+		PC_out => EX_PC_out,
+		instruction_out => EX_instruction_out,
+		branch_out => EX_branch,
+		branch_target_out => EX_branch_target,
+		rb_out => EX_rb_out,
+		alu_out => EX_alu	
+    );
+
+    EX_MEM_REG : EX_MEM 
+	port map(
+        clk => clk,
+        PC_in => EX_MEM_PC_in,
+        PC_out => EX_MEM_PC_out,
+        instruction_in => EX_MEM_instruction_in,
+        instruction_out => EX_MEM_instruction_out,
+        branch_in => EX_MEM_branch_in,
+        branch_out => EX_MEM_branch_out,
+        branch_target_in => EX_MEM_branch_target_in,
+        branch_target_out => EX_MEM_branch_target_out,
+        rb_in => EX_MEM_rb_in,
+        rb_out => EX_MEM_rb_out,
+        alu_in => EX_MEM_alu_in,
+        alu_out => EX_MEM_alu_out
+    );
+
+    MEM : Memory 
+	port map(
+        instruction_in => MEM_instruction_in,
+        alu_in => MEM_alu_in,
+        rb_in => MEM_rb,
+        instruction_out => MEM_instruction_out,
+        alu_out => MEM_alu_out,
+        memory_data => MEM_memory_data,
+        m_write_data => MEM_m_write_data,
+        m_addr => MEM_m_addr,
+        m_write => MEM_m_write,    
+        m_read => MEM_m_read,
+        m_readdata => MEM_m_readdata
+    );
+	
+    write_mem : Instruction_Memory 
+	generic map(
+        ram_size => ram_size,
+        bit_width => bit_width
+    )
+    port map(
+        clk => clk,
+        writedata => MEM_m_write_data,
+        address => MEM_m_addr,
+        memwrite => MEM_m_write, 
+        memread => MEM_m_read,
+        readdata => MEM_m_readdata,
+		write_to_mem => write_memory
+    );
+
+    MEM_WB_REG : MEM_WB 
+	port map (
+        clk => clk,
+        instruction_in => MEM_WB_instruction_in,
+        instruction_out => MEM_WB_instruction_out,
+        alu_in => MEM_WB_alu_in,
+        alu_out => MEM_WB_alu_out,
+        mem_in => MEM_WB_mem_in,
+        mem_out => MEM_WB_mem_out
+    );
+
+    WB : Write_Back 
+	port map(
+        instruction_in => WB_instruction_in,
+        memory_data_in => WB_mem_data,
+        alu_in => WB_alu,
+        instruction_out => WB_instruction_out,
+        wb_data_out => WB_data
+    );
+	
+	-- CONNECT SIGNALS
+	-- IF
+	IF_reset <= '1' when initialize = '1' else '0';
+    IF_stall <= ID_stall_out or control_stall;
+	
+	IF_branch_process : process(clk,IF_ID_instruction_out,ID_EX_instruction_out,EX_MEM_instruction_out,
+								EX_MEM_branch_target_out,EX_MEM_branch_out,MEM_WB_instruction_out) 							
+    variable branch_target : std_logic_vector(bit_width-1 downto 0) := (others => '0');
+    begin
+		branch_target := EX_MEM_branch_target_out;
+		IF_branch_condition <= EX_MEM_branch_out;
+        IF_branch_target <= to_integer(signed(branch_target));
+    end process;
+	
+	control_stall_process : process(clk, IF_ID_instruction_out,ID_EX_instruction_out,
+									EX_MEM_instruction_out,EX_MEM_branch_out)
+    begin
+		if  is_branch_type(IF_ID_instruction_out) or is_jump_type(IF_ID_instruction_out) or 
+			is_branch_type(ID_EX_instruction_out) or is_jump_type(ID_EX_instruction_out) or
+			((is_branch_type(EX_MEM_instruction_out) or is_jump_type(EX_MEM_instruction_out)) and EX_MEM_branch_out = '1')
+		then
+			control_stall <= '1';
+		else			
+			control_stall <= '0';
+		end if;
+    end process;
+	
+	-- IF/ID
+	IF_ID_register_stall <= ID_stall_out;
+	IF_ID_PC_in <= IF_PC;
+	IF_ID_instruction_in <= NO_OP_INSTRUCTION when initialize = '1' or control_stall = '1' else IF_instruction;
+							
+	-- ID
+	register_file <= ID_register_file;
+	ID_reset <= '1' when initialize = '1' else '0';
+	ID_IR(0) <= NO_OP_INSTRUCTION;
+    ID_IR(1) <= NO_OP_INSTRUCTION;
+    ID_PC_in <= IF_ID_PC_out;
+    ID_instruction_in <= IF_ID_instruction_out;
+	ID_wb_instr <= WB_instruction_out;
+    ID_wb_data <= WB_data;
+	
+	write_file_process : process(write_file)
+    begin
+        if rising_edge(write_file) then
+            write_memory <= '1';
+            ID_write_en <= '1';
+        else 
+            write_memory <= '0';
+            ID_write_en <= '0';        
+        end if;
+    end process ;
+	
+	-- ID/EX
+	ID_EX_PC_in <= ID_PC_out;
+    ID_EX_ra_in <= ID_ra;
+    ID_EX_rb_in <= ID_rb;
+    ID_EX_instruction_in <= ID_instruction_out;
+    ID_EX_immediate_in <= ID_immediate;
+
+	-- EX
+    EX_PC_in <= ID_EX_PC_out;
+    EX_instruction_in <= ID_EX_instruction_out;
+    EX_ra <= ID_EX_ra_out;
+    EX_rb <= ID_EX_rb_out;
+    EX_immediate <= ID_EX_immediate_out;
+    
+	-- EX/MEM
+	EX_MEM_PC_in <= EX_PC_out;
+	EX_MEM_instruction_in <= EX_instruction_out;
+	EX_MEM_branch_in <= EX_branch;
+    EX_MEM_alu_in <= EX_alu;
+	EX_MEM_branch_target_in <= EX_branch_target;
+    EX_MEM_rb_in <= EX_rb; 
+	
+	-- MEM
+    MEM_instruction_in <= EX_MEM_instruction_out;
+	MEM_alu_in <= EX_MEM_alu_out;
+    MEM_rb <= EX_MEM_rb_out;
+	
+	-- MEM/WB
+	MEM_WB_instruction_in <= MEM_instruction_out;
+    MEM_WB_alu_in <= MEM_alu_out;
+    MEM_WB_mem_in <= MEM_memory_data;
+    
+	-- WB
+    WB_instruction_in <= MEM_WB_instruction_out;
+    WB_mem_data <= MEM_WB_mem_out;
+	WB_alu <= MEM_WB_alu_out;
+    
+	-- INITIALIZE
+    init_process : process(initialize)
+    begin
+        if rising_edge(initialize) then
+            load_memory <= '1';
+        else 
+            load_memory <= '0';
+        end if;
+    end process ; 
 end behavioral;

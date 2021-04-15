@@ -8,10 +8,10 @@ use ieee.std_logic_textio.all;
 use std.textio.all;
 use work.INSTRUCTION_TOOLS.all;
 
-entity Pipelined_Processor_tb is
-end Pipelined_Processor_tb ; 
+entity fib_performance_tb is
+end fib_performance_tb ; 
 
-architecture behavioral of Pipelined_Processor_tb is
+architecture behavioral of fib_performance_tb is
     component Pipelined_Processor is
         generic(
 			ram_size : integer := 8192;
@@ -27,11 +27,14 @@ architecture behavioral of Pipelined_Processor_tb is
     end component;
 	
 	constant clock_period : time := 1 ns;
+	constant TEST_NAME : string := "benchmark2";
+	constant FILEPATH : STRING := "./" & TEST_NAME & "_performance.txt";
 	
 	signal clk : std_logic := '0';
 	signal initialize : std_logic := '0';
     signal write_file : std_logic := '0';
 	signal register_file : REGISTER_BLOCK;
+	signal time_taken : time;
 	
 begin
 
@@ -52,23 +55,39 @@ begin
 	end process ;
 
 	test_process : process
-	begin
-
+		file     fptr  : text;
+		variable line : line;
+		variable tstart, tstop : time;
+	begin		
 		initialize <= '1';
 		wait for clock_period;
 		initialize <= '0';
+		
+		wait for 3*clock_period;
+		
+		tstart := now;
+		for i in 0 to 9900 loop
+			wait for clock_period;
+			exit when register_file(10).data = x"00000000"; -- exit when $10 = 0 for benchmark2.asm
+		end loop;
+		tstop := now;
+		time_taken <= tstop - tstart;
+		
 		wait for clock_period;
-		
-		wait for 9900 ns;
-		
 		write_file <= '1';
 		wait for clock_period;
 		write_file <= '0';
 		wait for clock_period;
 		
 		report "Stored output in 'register_file.txt' and 'memory.txt'";
+		report "benchmark2 program.txt executed in " & time'image(time_taken);
 		
-		wait;
+		file_open(fptr, FILEPATH, WRITE_MODE);
+        write(line, TEST_NAME);
+        writeline(fptr, line);
+        write(line, "Elapsed time : " & time'image(time_taken));
+        writeline(fptr, line);
+		file_close(fptr);
 
 	end process;
 end behavioral;
