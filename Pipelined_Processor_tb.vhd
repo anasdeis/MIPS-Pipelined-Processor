@@ -1,3 +1,6 @@
+-- Group 7: Anas Deis, Albert Assouad, Barry Chen
+-- Date: 16/4/2021
+
 library ieee;
 use ieee.std_logic_1164.all ;
 use ieee.numeric_std.all ;
@@ -6,110 +9,70 @@ use work.INSTRUCTION_TOOLS.all;
 entity Pipelined_Processor_tb is
 end Pipelined_Processor_tb ; 
 
-architecture processor_test of Pipelined_Processor_tb is
-    constant clock_period : time := 1 ns;
-    COMPONENT Pipelined_Processor is
+architecture behavioral of Pipelined_Processor_tb is
+    component Pipelined_Processor is
         generic(
-        ram_size : integer := 8192;
-        mem_delay : time := 0.1 ns;
-        clock_period : time := 1 ns;
-        predictor_bit_width : integer := 2;
-        use_branch_prediction : boolean := true;
-        use_static_not_taken : boolean := false
+			ram_size : integer := 8192;
+			mem_delay : time := 0.1 ns;
+			clk_period : time := 1 ns;
+			predict_taken : boolean := false
         );
-        port (
-            clock : in std_logic;
-            initialize : in std_logic; -- signals to load Instruciton and Data Memories. Should be held at '1' for at least a few clock cycles.
-            dump : in std_logic; -- similar to above but for dump instead of load.
-            IF_ID_instruction : out INSTRUCTION; 
-            ID_EX_instruction : out INSTRUCTION; 
-            EX_MEM_instruction : out INSTRUCTION;
-            MEM_WB_instruction : out INSTRUCTION;
-            WB_instruction : out INSTRUCTION;
-            WB_data : out std_logic_vector(63 downto 0);
-            fetch_PC : out integer;
-            decode_register_file : out REGISTER_BLOCK;
-            ALU_out : out std_logic_vector(63 downto 0);
-            input_instruction : in INSTRUCTION;
-            override_input_instruction : in std_logic
+        port(
+            clk : in std_logic;
+            initialize : in std_logic; 
+            write_file : in std_logic
         );
-    end COMPONENT;
-    signal dump : std_logic := '0';
-    signal clk : std_logic := '0';
-    signal initialize : std_logic := '0';
-
-
-    signal IF_ID_instruction : INSTRUCTION; 
-    signal ID_EX_instruction : INSTRUCTION; 
-    signal EX_MEM_instruction : INSTRUCTION;
-    signal MEM_WB_instruction : INSTRUCTION;
-    signal WB_instruction : INSTRUCTION;
-    signal WB_data : std_logic_vector(63 downto 0);
-
-    signal PC : integer;
-
-    signal decode_register_file : REGISTER_BLOCK;
-
-    signal ALU_out_copy : std_logic_vector(63 downto 0);
-
-    signal input_instruction : INSTRUCTION;
-    signal override_input_instruction : std_logic := '0';
+    end component;
+	
+	constant clock_period : time := 1 ns;
+	
+	signal clk : std_logic := '0';
+	signal initialize : std_logic := '0';
+    signal write_file : std_logic := '0';
+	signal predict_taken : boolean := false;
 
 begin
 
-c1 : Pipelined_Processor GENERIC MAP (
-    use_branch_prediction => false,
-    use_static_not_taken => true
-    )
-    PORT MAP (
-    clk,
-    initialize,
-    dump,
-    IF_ID_instruction,
-    ID_EX_instruction, 
-    EX_MEM_instruction,
-    MEM_WB_instruction,
-    WB_instruction,
-    WB_data,
-    PC,
-    decode_register_file,
-    ALU_out_copy,
-    input_instruction,
-    override_input_instruction
-);
+	dut : Pipelined_Processor 
+	generic map(
+		predict_taken => predict_taken
+	)
+	port map(
+		clk => clk,
+		initialize => initialize,
+		write_file => write_file
+	);
 
+	clk_process : process
+	begin
+		clk <= '0';
+		wait for clock_period/2;
+		clk <= '1';
+		wait for clock_period/2;
+	end process ;
 
-clock_process : process
-begin
-    clk <= '0';
-    wait for clock_period/2;
-    clk <= '1';
-    wait for clock_period/2;
-end process ; -- clock_process
+	test_process : process
+	begin
+		if predict_taken then
+			report "Test using Predict Taken";
+		else
+			report "Test using Predict Not-Taken";
+		end if;
+		
+		initialize <= '1';
+		wait for clock_period;
+		initialize <= '0';
+		wait for clock_period;
 
+		wait for 9900 ns;
+		
+		write_file <= '1';
+		wait for clock_period;
+		write_file <= '0';
+		wait for clock_period;
+		
+		report "Stored output in 'register_file.txt' and 'memory.txt'";
+		wait;
 
-test_process : process
-begin
-    report "starting test process";
-    initialize <= '1';
-    wait for clock_period;
-    initialize <= '0';
-    wait for clock_period;
-    report "initialized.";
-
-    for i in 0 to 50 loop
-      wait for clock_period;
-    end loop;
-
-    wait for 9900 ns;
-    report "dumping...";
-    dump <= '1'; --dump data
-    wait for clock_period;
-    dump <= '0';
-    wait for clock_period;
-    report "Dumped Contents into 'memory.txt' and 'register_file.txt'";
-    wait;
-
-end process test_process;
-
-end architecture ;
+	end process;
+end behavioral;

@@ -28,8 +28,7 @@ entity Memory is
         m_addr : out integer range 0 to ram_size-1;   
         m_write : out std_logic;
 		m_read : out std_logic;
-		m_readdata : in std_logic_vector (bit_width-1 downto 0);
-        m_waitrequest : in std_logic
+		m_readdata : in std_logic_vector (bit_width-1 downto 0)
     );
 end Memory;
 
@@ -39,7 +38,7 @@ begin
     instruction_out <= instruction_in;
     alu_out <= alu_in;
 
-    mem_process : process(instruction_in, alu_in, rb_in, m_readdata, m_waitrequest)
+    mem_process : process(instruction_in, alu_in, rb_in, m_readdata)
     begin
         case instruction_in.INSTRUCTION_TYPE is
             when load_word =>

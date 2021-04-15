@@ -14,6 +14,7 @@ entity Decode is
 		-- INPUTS
 		clk : in std_logic;
 		reset : in std_logic;  -- reset register file
+		write_en_in : in std_logic;	 -- enable writing to register
 		
 		-- Hazard / Branching
 		IR_in : in INSTRUCTION_ARRAY;  -- Instruction Register holds the instructions to be decoded.
@@ -37,11 +38,7 @@ entity Decode is
 		instruction_out : out INSTRUCTION;
 		rs_data : out std_logic_vector(31 downto 0);	   -- data associated with the register index of rs
 		rt_data : out std_logic_vector(31 downto 0);	   -- data associated with the register index of rt
-		immediate_out : out std_logic_vector(31 downto 0); -- sign extendeded immediate value
-		
-		-- Write registry_file 	
-		write_en_in : in std_logic;				 -- enable writing to register
-		register_file_out : out REGISTER_BLOCK  -- output register data structure for pipeline to observe changes while testing	
+		immediate_out : out std_logic_vector(31 downto 0) -- sign extendeded immediate value
 	);
 	end Decode;
 
@@ -59,7 +56,6 @@ architecture behavioral of Decode is
 begin
 
 	PC_out <= PC_in;
-	register_file_out <= register_file;
 	stall_out <= stall_op;
 	stall_decode <= '1' when stall_in = '1' or stall_op = '1' else '0';
 	instruction_out <=  NO_OP_INSTRUCTION when stall_decode = '1' else 

@@ -1,43 +1,42 @@
---Adapted from Example 12-15 of Quartus Design and Synthesis handbook
-LIBRARY ieee;
-USE ieee.std_logic_1164.all;
-USE ieee.numeric_std.all;
-USE ieee.std_logic_textio.all;
-USE std.textio.all;
+-- Group 7: Anas Deis, Albert Assouad, Barry Chen
+-- Date: 16/4/2021
 
-ENTITY Instruction_Memory IS
-	GENERIC(
-		ram_size : INTEGER := 8192;
-		bit_width : INTEGER := 32;
-		mem_delay : time := 0.1 ns;
-		clock_period : time := 1 ns
-	);
-	PORT (
-		clock: IN STD_LOGIC;
-		writedata: IN STD_LOGIC_VECTOR (bit_width-1 DOWNTO 0);
-		address: IN INTEGER RANGE 0 TO ram_size-1;
-		memwrite: IN STD_LOGIC;
-		memread: IN STD_LOGIC;
-		readdata: OUT STD_LOGIC_VECTOR (bit_width-1 DOWNTO 0);
-		waitrequest: OUT STD_LOGIC;
-		write_to_mem: IN STD_LOGIC;
-		load_program: IN STD_LOGIC
-	);
-END Instruction_Memory;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use ieee.std_logic_textio.all;
+use std.textio.all;
 
-ARCHITECTURE rtl OF Instruction_Memory IS
-	TYPE MEM IS ARRAY(ram_size-1 downto 0) OF STD_LOGIC_VECTOR(bit_width-1 DOWNTO 0);
+entity instruction_Memory is
+	generic(
+		ram_size : integer := 8192;
+		bit_width : integer := 32;
+		mem_delay : time := 10 ns;
+		clk_period : time := 1 ns
+	);
+	port (
+		clk: in std_logic;
+		writedata: in std_logic_vector (bit_width-1 downto 0);
+		address: in integer range 0 to ram_size-1;
+		memwrite: in std_logic;
+		memread: in std_logic;
+		readdata: out std_logic_vector (bit_width-1 downto 0);
+		write_to_mem: in std_logic;
+		load_program: in std_logic
+	);
+end instruction_Memory;
+
+architecture rtl of instruction_Memory is
+	type MEM is array(ram_size-1 downto 0) of std_logic_vector(bit_width-1 downto 0);
 	constant empty_ram_block : MEM := (others => (others => '0'));
-	SIGNAL ram_block: MEM := empty_ram_block; 
-	SIGNAL write_waitreq_reg: STD_LOGIC := '1';
-	SIGNAL read_waitreq_reg: STD_LOGIC := '1';
+	signal ram_block: MEM := empty_ram_block; 
 
-BEGIN
+begin
 	-- write to memory.txt
 	write_mem_process: process(write_to_mem)
 		file     fptr  : text;
 		variable file_line : line;
-	BEGIN
+	begin
 		if(rising_edge(write_to_mem)) then
 			file_open(fptr, "memory.txt", WRITE_MODE);
 			for i in 0 to ram_size-1 loop
@@ -52,7 +51,7 @@ BEGIN
 	read_program_process: process(load_program, memwrite, address, writedata)
 		file 	 fptr: text;
 		variable file_line: line;
-		variable line_data: std_logic_vector(bit_width-1 DOWNTO 0);
+		variable line_data: std_logic_vector(bit_width-1 downto 0);
 		variable i : integer := 0;
 	begin
 		if(rising_edge(load_program)) then
@@ -69,23 +68,4 @@ BEGIN
 		end if;	
 	end process;
 	readdata <= ram_block(address);
-
-	--The waitrequest signal is used to vary response time in simulation
-	--Read and write should never happen at the same time.
-	waitreq_w_proc: PROCESS (memwrite)
-	BEGIN
-		IF(memwrite'event AND memwrite = '1')THEN
-			write_waitreq_reg <= '0' after mem_delay, '1' after mem_delay + clock_period;
-
-		END IF;
-	END PROCESS;
-
-	waitreq_r_proc: PROCESS (memread)
-	BEGIN
-		IF(memread'event AND memread = '1')THEN
-			read_waitreq_reg <= '0' after mem_delay, '1' after mem_delay + clock_period;
-		END IF;
-	END PROCESS;
-	waitrequest <= write_waitreq_reg and read_waitreq_reg;
-
-END rtl;
+end rtl;

@@ -23,6 +23,5 @@ end Write_Back ;
 architecture behavioral of Write_Back is
 begin
   instruction_out <= instruction_in;
-  wb_data_out <= x"00000000" & memory_data_in when instruction_in.instruction_type = LOAD_WORD else
-				 alu_in;
+  wb_data_out <= x"00000000" & memory_data_in when instruction_in.instruction_type = LOAD_WORD else alu_in;
 end behavioral ; 

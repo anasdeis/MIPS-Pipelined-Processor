@@ -19,11 +19,9 @@ entity MEM_WB is
 end MEM_WB;
 
 architecture behavioral of MEM_WB is
-
     signal instruction_next: INSTRUCTION;
     signal alu_next: std_logic_vector(63 downto 0);
     signal mem_next: std_logic_vector(31 downto 0);
-
 begin
 
     instruction_out <= instruction_next;

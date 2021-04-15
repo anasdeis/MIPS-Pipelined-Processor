@@ -27,33 +27,12 @@ entity Fetch is
 		-- Instruction Memory
 		m_addr : out integer range 0 to ram_size-1;
 		m_read : out std_logic;
-		m_readdata : in std_logic_vector (bit_width-1 downto 0);
-		m_waitrequest : in std_logic
+		m_readdata : in std_logic_vector (bit_width-1 downto 0)
 	);
 	end Fetch;
 
 architecture behavioral of Fetch is
-
-	component Instruction_Memory is
-		generic(
-			ram_size : INTEGER := 8192;
-			bit_width : INTEGER := 32;
-			mem_delay : time := 0.1 ns;
-			clock_period : time := 1 ns
-		);
-		port(
-			clock: in std_logic;
-			writedata: in std_logic_vector (bit_width-1 downto 0);
-			address: in INTEGER range 0 to ram_size-1;
-			memwrite: in std_logic;
-			memread: in std_logic;
-			readdata: out std_logic_vector (bit_width-1 downto 0);
-			waitrequest: out std_logic;
-			write_to_mem: in std_logic;
-			load_program: in std_logic
-		); end component;
-		
-		signal PC, PC_next : integer range 0 to ram_size - 1 := 0;
+	signal PC, PC_next : integer range 0 to ram_size - 1 := 0;
 begin 
 
 	PC_out <= PC; 
@@ -76,7 +55,7 @@ begin
 		end if ;
 	end process; 
 
-	memory_process : process(clk, reset, PC, m_readdata, m_waitrequest)
+	memory_process : process(clk, reset, PC, m_readdata)
 	variable instruction : INSTRUCTION;
 	begin  
 		if reset = '1' then
