@@ -6,7 +6,7 @@ use ieee.std_logic_1164.all ;
 use ieee.numeric_std.all ;
 use ieee.std_logic_textio.all;
 use std.textio.all;
-use work.INSTRUCTION_TOOLS.all;
+use work.definitions.all;
 
 entity fib_performance_tb is
 end fib_performance_tb ; 
@@ -35,9 +35,7 @@ architecture behavioral of fib_performance_tb is
     signal write_file : std_logic := '0';
 	signal register_file : REGISTER_BLOCK;
 	signal time_taken : time;
-	
 begin
-
 	dut : Pipelined_Processor 
 	port map(
 		clk => clk,
@@ -88,6 +86,8 @@ begin
         write(line, "Elapsed time : " & time'image(time_taken));
         writeline(fptr, line);
 		file_close(fptr);
+		
+		wait;
 
 	end process;
 end behavioral;

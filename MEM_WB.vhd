@@ -4,7 +4,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.instruction_tools.all;
+use work.definitions.all;
 
 entity MEM_WB is
 	port(
@@ -23,7 +23,6 @@ architecture behavioral of MEM_WB is
     signal alu_next: std_logic_vector(63 downto 0);
     signal mem_next: std_logic_vector(31 downto 0);
 begin
-
     instruction_out <= instruction_next;
     alu_out <= alu_next;
 	mem_out <= mem_next;

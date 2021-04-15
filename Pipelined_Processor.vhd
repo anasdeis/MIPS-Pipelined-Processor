@@ -4,7 +4,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.INSTRUCTION_TOOLS.all;
+use work.definitions.all;
 
 -- Pipelined_Processor
 entity Pipelined_Processor is
@@ -246,7 +246,7 @@ architecture behavioral of Pipelined_Processor is
     -- Decode
 	signal ID_reset : std_logic;
 	signal ID_write_en : std_logic;
-	signal ID_IR : INSTRUCTION_ARRAY := (others => NO_OP_INSTRUCTION);
+	signal ID_IR : INSTRUCTION_ARRAY := (others => NO_OP);
 	signal ID_stall_in : std_logic;
     signal ID_PC_in : integer;
     signal ID_instruction_in : INSTRUCTION;
@@ -513,9 +513,9 @@ begin
 	control_stall_process : process(clk, IF_ID_instruction_out,ID_EX_instruction_out,
 									EX_MEM_instruction_out,EX_MEM_branch_out)
     begin
-		if  is_branch_type(IF_ID_instruction_out) or is_jump_type(IF_ID_instruction_out) or 
-			is_branch_type(ID_EX_instruction_out) or is_jump_type(ID_EX_instruction_out) or
-			((is_branch_type(EX_MEM_instruction_out) or is_jump_type(EX_MEM_instruction_out)) and EX_MEM_branch_out = '1')
+		if  is_branch(IF_ID_instruction_out) or is_jump(IF_ID_instruction_out) or 
+			is_branch(ID_EX_instruction_out) or is_jump(ID_EX_instruction_out) or
+			((is_branch(EX_MEM_instruction_out) or is_jump(EX_MEM_instruction_out)) and EX_MEM_branch_out = '1')
 		then
 			control_stall <= '1';
 		else			
@@ -526,13 +526,13 @@ begin
 	-- IF/ID
 	IF_ID_register_stall <= ID_stall_out;
 	IF_ID_PC_in <= IF_PC;
-	IF_ID_instruction_in <= NO_OP_INSTRUCTION when initialize = '1' or control_stall = '1' else IF_instruction;
+	IF_ID_instruction_in <= NO_OP when initialize = '1' or control_stall = '1' else IF_instruction;
 							
 	-- ID
 	register_file <= ID_register_file;
 	ID_reset <= '1' when initialize = '1' else '0';
-	ID_IR(0) <= NO_OP_INSTRUCTION;
-    ID_IR(1) <= NO_OP_INSTRUCTION;
+	ID_IR(0) <= NO_OP;
+    ID_IR(1) <= NO_OP;
     ID_PC_in <= IF_ID_PC_out;
     ID_instruction_in <= IF_ID_instruction_out;
 	ID_wb_instr <= WB_instruction_out;

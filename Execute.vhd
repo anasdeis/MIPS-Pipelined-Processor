@@ -4,7 +4,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.INSTRUCTION_TOOLS.all;
+use work.definitions.all;
 
 -- Stage 3 : Execute
 entity Execute is
@@ -29,30 +29,29 @@ entity Execute is
 architecture behavioral of Execute is
 	signal rs,rt: std_logic_vector(31 downto 0);
 	signal alu_output : std_logic_vector(63 downto 0);
-	
 begin
 	evaluate_inputs_process : process(PC_in, instruction_in, ra_in, rb_in, immediate_in)
 	begin
-		case instruction_in.INSTRUCTION_TYPE is
-			when ADD | SUBTRACT | MULTIPLY | DIVIDE | SET_LESS_THAN | BITWISE_AND | BITWISE_OR | BITWISE_NOR | BITWISE_XOR =>
+		case instruction_in.name is
+			when ADD | SUB | MULT | DIV | SLT | BITWISE_AND | BITWISE_OR | BITWISE_NOR | BITWISE_XOR =>
 				rs <= ra_in; 
 				rt <= rb_in; 
-			when ADD_IMMEDIATE | SET_LESS_THAN_IMMEDIATE | BITWISE_AND_IMMEDIATE | BITWISE_OR_IMMEDIATE | BITWISE_XOR_IMMEDIATE | LOAD_WORD | STORE_WORD =>
+			when ADDI | SLTI | ANDI | ORI | XORI | LW | SW =>
 				rs <= ra_in; 
-				rt <= signExtend(instruction_in.immediate_vect);
-			when MOVE_FROM_HI | MOVE_FROM_LOW | LOAD_UPPER_IMMEDIATE =>
+				rt <= sign_extend(instruction_in.immediate_vect);
+			when MFHI | MFLO | LUI =>
 				rs <= ra_in;
 				rt <= rb_in;
-			when SHIFT_LEFT_LOGICAL | SHIFT_RIGHT_LOGICAL | SHIFT_RIGHT_ARITHMETIC =>
+			when SHIFT_LL | SHIFT_RL | SHIFT_RA =>
 				rs <= (31 downto 5 => '0') & instruction_in.shamt_vect;
 				rt <= rb_in;
-			when BRANCH_IF_EQUAL | BRANCH_IF_NOT_EQUAL =>
+			when BEQ | BNE =>
 				rs <= std_logic_vector(to_unsigned(PC_in, 32)); 
 				rt <= immediate_in;
-			when JUMP | JUMP_AND_LINK =>
+			when J | JAL =>
 				rs <= std_logic_vector(to_unsigned(PC_in,32)); 
 				rt <= "000000" & instruction_in.address_vect;
-			when JUMP_TO_REGISTER =>
+			when JR =>
 				rs <= ra_in;
 				rt <= rb_in;
 			when UNKNOWN =>
@@ -60,69 +59,65 @@ begin
 		end case;
 	end process; 
 	
-	compute_process : process(instruction_in.instruction_type, rs, rt)
+	compute_process : process(instruction_in.name, rs, rt)
 		variable shamt, address : integer := 0; 
 		variable j_address : std_logic_vector(31 downto 0);
-	
 	begin
-
 		shamt := to_integer(unsigned(rs(4 downto 0)));
-
-		case instruction_in.INSTRUCTION_TYPE is
-		  
-			when ADD | ADD_IMMEDIATE | LOAD_WORD | STORE_WORD  =>
+		case instruction_in.name is	  
+			when ADD | ADDI | LW | SW  =>
 				alu_output <= conv_32_to_64(std_logic_vector(signed(rs) + signed(rt))); 
 			  
-			when SUBTRACT =>
+			when SUB =>
 				alu_output <= conv_32_to_64(std_logic_vector(signed(rs) - signed(rt))); 
 
-			when MULTIPLY =>
+			when MULT =>
 				alu_output <= std_logic_vector(signed(rs) * signed(rt)); 
 			  
-			when DIVIDE =>  
+			when DIV =>  
 				alu_output(63 downto 32) <= std_logic_vector(signed(rs) rem signed(rt));
 				alu_output(31 downto 0) <= std_logic_vector(signed(rs) / signed(rt));
 
-			when SET_LESS_THAN | SET_LESS_THAN_IMMEDIATE =>
+			when SLT | SLTI =>
 				if signed(rs) < signed(rt) then 
 					alu_output <= x"0000000000000001";
 				else 
 					alu_output <= x"0000000000000000";
 				end if;  
 			  
-			when BITWISE_AND | BITWISE_AND_IMMEDIATE=>
+			when BITWISE_AND | ANDI =>
 				alu_output <= conv_32_to_64(rs and rt);
 			  
-			when BITWISE_OR | BITWISE_OR_IMMEDIATE =>
+			when BITWISE_OR | ORI =>
 				alu_output <= conv_32_to_64(rs or rt);
 			  
 			when BITWISE_NOR =>
 				alu_output <= conv_32_to_64(rs nor rt);
 			  
-			when BITWISE_XOR | BITWISE_XOR_IMMEDIATE =>
+			when BITWISE_XOR | XORI =>
 				alu_output <= conv_32_to_64(rs xor rt);
 			  
-			when MOVE_FROM_HI | MOVE_FROM_LOW | LOAD_UPPER_IMMEDIATE =>
+			when MFHI | MFLO | LUI =>
 				alu_output <= conv_32_to_64(rs);
 				
-			when SHIFT_LEFT_LOGICAL =>
+			when SHIFT_LL =>
 				alu_output <= conv_32_to_64(std_logic_vector(shift_left(unsigned(rt), shamt))); 
 
-			when SHIFT_RIGHT_LOGICAL =>
+			when SHIFT_RL =>
 				alu_output <= conv_32_to_64(std_logic_vector(shift_right(unsigned(rt), shamt)));
 			  
-			when SHIFT_RIGHT_ARITHMETIC =>
+			when SHIFT_RA =>
 				alu_output <= conv_32_to_64(std_logic_vector(shift_right(signed(rt), shamt)));
 			
-			when BRANCH_IF_EQUAL | BRANCH_IF_NOT_EQUAL =>
+			when BEQ | BNE =>
 				address := to_integer(unsigned(rs)) + 4 + to_integer(shift_left(signed(rt), 2)); -- target + address offset
 				alu_output <= conv_32_to_64(std_logic_vector(to_unsigned(address, 32)));
 				
-			when JUMP | JUMP_AND_LINK =>
+			when J | JAL =>
 				j_address := rs(31 downto 28) & rt(25 downto 0) & "00";
 				alu_output <= conv_32_to_64(j_address);
 			  
-			when JUMP_TO_REGISTER =>
+			when JR =>
 				alu_output <= conv_32_to_64(rs);
 
 			when UNKNOWN =>
@@ -131,12 +126,9 @@ begin
 	end process; 
 	
 	-- propagate signals
-	branch_out <=	'1' when instruction_in.INSTRUCTION_TYPE = BRANCH_IF_EQUAL and ra_in = rb_in else
-					'1' when instruction_in.INSTRUCTION_TYPE = BRANCH_IF_NOT_EQUAL and ra_in /= rb_in else
-					'1' when instruction_in.INSTRUCTION_TYPE = JUMP or instruction_in.INSTRUCTION_TYPE = JUMP_TO_REGISTER
-						or instruction_in.INSTRUCTION_TYPE = JUMP_AND_LINK else
-					'0';
-
+	branch_out <= '1' when (instruction_in.name = BEQ and ra_in = rb_in) or
+				  (instruction_in.name = BNE and ra_in /= rb_in) or
+				  is_jump(instruction_in) else '0';
 	rb_out <= rb_in;
 	PC_out <= PC_in;
 	alu_out <= alu_output;

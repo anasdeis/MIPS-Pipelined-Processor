@@ -4,7 +4,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.INSTRUCTION_TOOLS.all;
+use work.definitions.all;
 
 -- Stage 1: Fetch
 entity Fetch is
@@ -38,16 +38,16 @@ begin
 	PC_out <= PC; 
 	PC_next <= 	0 when reset = '1' else
 				branch_target_in when branch_condition_in = '1' else -- branch when test condition is true
-				PC when PC + 4 >= ram_size-1 else	 -- PC reached max value so do not increment	
+				PC when PC + 4 >= ram_size-1 else  -- PC reached max value so do not increment	
 				PC when stall_in = '1' else  -- stall with no-op
 				PC + 4;	-- next instruction 	
 
-	PC_process : process( clk, reset, stall_in, branch_target_in, branch_condition_in, PC_next)
+	PC_process : process(clk, reset, stall_in, branch_target_in, branch_condition_in, PC_next)
 	begin
 		if reset = '1' then
 			PC <= 0;
 		elsif rising_edge(clk) then
-			if branch_condition_in = '1' then	-- branch when test condition is true
+			if branch_condition_in = '1' then  -- branch when test condition is true
 			PC <= branch_target_in;
 			else
 			PC <= PC_next; -- otherwise next instruction
@@ -59,9 +59,9 @@ begin
 	variable instruction : INSTRUCTION;
 	begin  
 		if reset = '1' then
-			instruction_out <= NO_OP_INSTRUCTION;
+			instruction_out <= NO_OP;
 		else	
-			instruction := getInstruction(m_readdata);
+			instruction := create_instruction(m_readdata);
 			instruction_out <= instruction;
 			m_addr <= PC / 4;
 			m_read <= '1';	

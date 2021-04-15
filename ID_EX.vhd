@@ -4,7 +4,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.instruction_tools.all;
+use work.definitions.all;
 
 entity ID_EX is
 	port(
@@ -23,13 +23,10 @@ entity ID_EX is
 end ID_EX;
 
 architecture behavioral of ID_EX is
-
     signal PC_next: integer;
     signal instruction_next: INSTRUCTION;
     signal ra_next, rb_next, immediate_next: std_logic_vector(31 downto 0);
-	
 begin
-
     PC_out <= PC_next;
     instruction_out <= instruction_next;
     ra_out <= ra_next;
