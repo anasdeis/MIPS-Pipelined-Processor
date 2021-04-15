@@ -4,7 +4,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.instruction_tools.all;
+use work.definitions.all;
 
 entity EX_MEM is
 	port (
@@ -25,15 +25,12 @@ entity EX_MEM is
 end EX_MEM;
 
 architecture behavioral of EX_MEM is
-
     signal PC_next: integer;
     signal instruction_next: INSTRUCTION;
     signal branch_next: std_logic;
     signal branch_target_next, rb_next: std_logic_vector(31 downto 0);
 	signal alu_next: std_logic_vector(63 downto 0);
-
 begin
-
     PC_out <= PC_next;
     instruction_out <= instruction_next;
     branch_out <= branch_next;

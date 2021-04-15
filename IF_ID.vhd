@@ -4,7 +4,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.instruction_tools.all;
+use work.definitions.all;
 
 entity IF_ID is
 	port(
@@ -18,12 +18,9 @@ entity IF_ID is
 end IF_ID;
 
 architecture behavioral of IF_ID is
-
     signal PC_next: integer;
     signal instruction_next: INSTRUCTION;
-	
 begin
-
     PC_out <= PC_next;
     instruction_out <= instruction_next;
 	

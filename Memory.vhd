@@ -4,7 +4,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.instruction_tools.all;
+use work.definitions.all;
 
 -- Stage 4 : Memory
 entity Memory is
@@ -40,12 +40,12 @@ begin
 
     mem_process : process(instruction_in, alu_in, rb_in, m_readdata)
     begin
-        case instruction_in.INSTRUCTION_TYPE is
-            when load_word =>
+        case instruction_in.name is
+            when LW =>
                 m_read <= '1';
 				memory_data <= m_readdata;
                 m_addr <= to_integer(unsigned(alu_in(31 downto 0))) / 4;
-            when store_word =>
+            when SW =>
                 m_write <= '1';
 				m_write_data <= rb_in;
                 m_addr <= to_integer(unsigned(alu_in(31 downto 0))) / 4;
