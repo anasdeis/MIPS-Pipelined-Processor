@@ -11,13 +11,13 @@ entity Pipelined_Processor is
 	generic(
 		ram_size : integer := 8192;
 		mem_delay : time := 10 ns;
-		clk_period : time := 1 ns;
-		predict_taken : boolean := false
+		clk_period : time := 1 ns
 	);
 	port(
 		clk : in std_logic;
 		initialize : in std_logic := '0'; 
-		write_file : in std_logic := '0'
+		write_file : in std_logic := '0';
+		register_file : out REGISTER_BLOCK
 	);
 	constant bit_width : integer := 32;
 end Pipelined_Processor ;
@@ -88,7 +88,10 @@ architecture behavioral of Pipelined_Processor is
 			instruction_out : out INSTRUCTION;
 			rs_data : out std_logic_vector(bit_width-1 downto 0);	   -- data associated with the register index of rs
 			rt_data : out std_logic_vector(bit_width-1 downto 0);	   -- data associated with the register index of rt
-			immediate_out : out std_logic_vector(bit_width-1 downto 0) -- sign extendeded immediate value
+			immediate_out : out std_logic_vector(bit_width-1 downto 0); -- sign extendeded immediate value
+			
+			-- To Pipeline
+			register_file_out : out REGISTER_BLOCK
 		); 
 	end component;
 
@@ -256,6 +259,7 @@ architecture behavioral of Pipelined_Processor is
     signal ID_ra : std_logic_vector(bit_width-1 downto 0);
     signal ID_rb : std_logic_vector(bit_width-1 downto 0);
     signal ID_immediate : std_logic_vector(bit_width-1 downto 0);
+	signal ID_register_file : REGISTER_BLOCK;
 
     -- ID/EX
     signal ID_EX_PC_in: integer;
@@ -391,7 +395,8 @@ begin
         instruction_out => ID_instruction_out,
         rs_data => ID_ra,
         rt_data => ID_rb,
-        immediate_out => ID_immediate	
+        immediate_out => ID_immediate,
+		register_file_out => ID_register_file
     );
 
     ID_EX_REG : ID_EX 
@@ -524,6 +529,7 @@ begin
 	IF_ID_instruction_in <= NO_OP_INSTRUCTION when initialize = '1' or control_stall = '1' else IF_instruction;
 							
 	-- ID
+	register_file <= ID_register_file;
 	ID_reset <= '1' when initialize = '1' else '0';
 	ID_IR(0) <= NO_OP_INSTRUCTION;
     ID_IR(1) <= NO_OP_INSTRUCTION;

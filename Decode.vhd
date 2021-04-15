@@ -38,7 +38,10 @@ entity Decode is
 		instruction_out : out INSTRUCTION;
 		rs_data : out std_logic_vector(31 downto 0);	   -- data associated with the register index of rs
 		rt_data : out std_logic_vector(31 downto 0);	   -- data associated with the register index of rt
-		immediate_out : out std_logic_vector(31 downto 0) -- sign extendeded immediate value
+		immediate_out : out std_logic_vector(31 downto 0); -- sign extendeded immediate value
+		
+		-- To Pipeline
+		register_file_out : out REGISTER_BLOCK
 	);
 	end Decode;
 
@@ -54,7 +57,7 @@ architecture behavioral of Decode is
 	signal stall_op, stall_decode : std_logic := '0';
 	
 begin
-
+	register_file_out <= register_file;
 	PC_out <= PC_in;
 	stall_out <= stall_op;
 	stall_decode <= '1' when stall_in = '1' or stall_op = '1' else '0';
