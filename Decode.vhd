@@ -16,8 +16,7 @@ entity Decode is
 		reset : in std_logic;  -- reset register file
 		write_en_in : in std_logic;	 -- enable writing to register
 		
-		-- Hazard / Branching
-		IR_in : in INSTRUCTION_ARRAY;  -- Instruction Register holds the instructions to be decoded.
+		-- Hazard
 		stall_in : in std_logic;  -- stall if instruction from IF uses a register that is currently busy
 		
 		-- From IF/ID 
@@ -62,7 +61,7 @@ begin
 	instruction_out <=  NO_OP when stall_decode = '1' else 
 						instruction_in;
 
-	decode_process : process(clk, reset, instruction_in, wb_instr_in, wb_data_in, IR_in, register_file, stall_decode)
+	decode_process : process(clk, reset, instruction_in, wb_instr_in, wb_data_in, register_file, stall_decode)
 		variable rs, wb_rs, rt, wb_rt, rd, wb_rd : integer range 0 to NUM_REGISTERS-1;
 		variable immediate : std_logic_vector(15 downto 0);
 	begin
@@ -162,36 +161,6 @@ begin
 			end if;
 
 		else 
-			-- reset the busy bits of the instructions in the IR
-		    for i in IR_in'range loop
-				case IR_in(i).name is 
-					when ADD | SUB | BITWISE_AND | BITWISE_OR | BITWISE_NOR | BITWISE_XOR | SLT | SHIFT_LL | SHIFT_RL | SHIFT_RA =>
-						register_file(IR_in(i).rd).busy <= '0';
-
-					when ADDI | ANDI | ORI | XORI | SLTI | LW =>
-						register_file(IR_in(i).rt).busy <= '0';
-
-					when MULT | DIV =>
-						lo.busy <= '0';
-						hi.busy <= '0';
-
-					when LUI =>
-						register_file(IR_in(i).rt).busy <= '0';
-					
-					when MFHI =>
-						register_file(IR_in(i).rd).busy <= '0';
-						hi.busy <= '0';
-					
-					when MFLO =>
-						register_file(IR_in(i).rd).busy <= '0';
-						lo.busy <= '0';
-
-					when SW | BEQ | BNE | J | JR | JAL | UNKNOWN =>
-						null;
-
-				end case;
-			end loop;
-		
 			-- reset busy bit of instruction from WB
 			case wb_instr_in.name is
 				-- R format: write into rd (destination register) for R formats we get from WB stage unless it's $0

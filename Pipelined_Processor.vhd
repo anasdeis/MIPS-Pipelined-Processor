@@ -66,8 +66,7 @@ architecture behavioral of Pipelined_Processor is
 			reset : in std_logic;       -- reset register file
 			write_en_in : in std_logic;	-- enable writing to register	
 			
-			-- Hazard / Branching
-			IR_in : in INSTRUCTION_ARRAY;  -- Instruction Register holds the instruction currently being decoded.
+			-- Hazard
 			stall_in : in std_logic;  -- stall if instruction from IF uses a register that is currently busy
 			
 			-- From IF/ID 
@@ -383,7 +382,6 @@ begin
         clk => clk,
 		reset => ID_reset,
 		write_en_in => ID_write_en,
-		IR_in => ID_IR,
         stall_in => ID_stall_in,
         PC_in => ID_PC_in,
         instruction_in => ID_instruction_in,
@@ -531,8 +529,6 @@ begin
 	-- ID
 	register_file <= ID_register_file;
 	ID_reset <= '1' when initialize = '1' else '0';
-	ID_IR(0) <= NO_OP;
-    ID_IR(1) <= NO_OP;
     ID_PC_in <= IF_ID_PC_out;
     ID_instruction_in <= IF_ID_instruction_out;
 	ID_wb_instr <= WB_instruction_out;
