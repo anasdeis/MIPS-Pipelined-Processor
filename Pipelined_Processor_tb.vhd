@@ -37,8 +37,7 @@ architecture behavioral of Pipelined_Processor_tb is
 			ID_PC_in_out : out integer;
 			ID_ra_out : out std_logic_vector(bit_width-1 downto 0);
 			ID_rb_out : out std_logic_vector(bit_width-1 downto 0);
-			ID_stall_in_out : out std_logic;
-			ID_stall_out_out : out std_logic;
+			ID_stall_out : out std_logic;
 			ID_wb_data_out : out std_logic_vector(63 downto 0);
 			ID_wb_instr_out : out INSTRUCTION;
 			EX_alu_out : out std_logic_vector(63 downto 0);
@@ -68,8 +67,7 @@ architecture behavioral of Pipelined_Processor_tb is
 	signal ID_PC_in : integer;
 	signal ID_ra : std_logic_vector(bit_width-1 downto 0);
 	signal ID_rb : std_logic_vector(bit_width-1 downto 0);
-	signal ID_stall_in : std_logic;
-	signal ID_stall_out : std_logic;
+	signal ID_stall : std_logic;
 	signal ID_wb_data : std_logic_vector(63 downto 0);
 	signal ID_wb_instr : INSTRUCTION;
 	signal EX_alu : std_logic_vector(63 downto 0);
@@ -95,8 +93,7 @@ begin
 		ID_PC_in_out => ID_PC_in,
 		ID_ra_out => ID_ra,
 		ID_rb_out => ID_rb,
-		ID_stall_in_out => ID_stall_in,
-		ID_stall_out_out => ID_stall_out,
+		ID_stall_out => ID_stall,
 		ID_wb_data_out => ID_wb_data,
 		ID_wb_instr_out => ID_wb_instr,
 		EX_alu_out => EX_alu,
