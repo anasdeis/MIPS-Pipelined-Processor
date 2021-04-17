@@ -15,6 +15,7 @@ architecture behavioral of fib_performance_tb is
     component Pipelined_Processor is
         generic(
 			ram_size : integer := 8192;
+			bit_width : integer := 32;
 			mem_delay : time := 10 ns;
 			clk_period : time := 1 ns
         );
