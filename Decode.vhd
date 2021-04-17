@@ -16,9 +16,6 @@ entity Decode is
 		reset : in std_logic;  -- reset register file
 		write_en_in : in std_logic;	 -- enable writing to register
 		
-		-- Hazard
-		stall_in : in std_logic;  -- stall if instruction from IF uses a register that is currently busy
-		
 		-- From IF/ID 
 		PC_in : in integer;
 		instruction_in : in INSTRUCTION;
@@ -57,7 +54,7 @@ begin
 	register_file_out <= register_file;
 	PC_out <= PC_in;
 	stall_out <= stall_op;
-	stall_decode <= '1' when stall_in = '1' or stall_op = '1' else '0';
+	stall_decode <= '1' when stall_op = '1' else '0';
 	instruction_out <=  NO_OP when stall_decode = '1' else 
 						instruction_in;
 

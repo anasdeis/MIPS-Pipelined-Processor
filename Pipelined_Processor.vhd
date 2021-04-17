@@ -33,8 +33,7 @@ entity Pipelined_Processor is
 		ID_PC_in_out : out integer;
 		ID_ra_out : out std_logic_vector(bit_width-1 downto 0);
 		ID_rb_out : out std_logic_vector(bit_width-1 downto 0);
-		ID_stall_in_out : out std_logic;
-		ID_stall_out_out : out std_logic;
+		ID_stall_out : out std_logic;
 		ID_wb_data_out : out std_logic_vector(63 downto 0);
 		ID_wb_instr_out : out INSTRUCTION;
 		EX_alu_out : out std_logic_vector(63 downto 0);
@@ -88,9 +87,6 @@ architecture behavioral of Pipelined_Processor is
 			clk : in std_logic;
 			reset : in std_logic;       -- reset register file
 			write_en_in : in std_logic;	-- enable writing to register	
-			
-			-- Hazard
-			stall_in : in std_logic;  -- stall if instruction from IF uses a register that is currently busy
 			
 			-- From IF/ID 
 			PC_in : in integer;
@@ -269,13 +265,12 @@ architecture behavioral of Pipelined_Processor is
 	signal ID_reset : std_logic;
 	signal ID_write_en : std_logic;
 	signal ID_IR : INSTRUCTION_ARRAY := (others => NO_OP);
-	signal ID_stall_in : std_logic;
     signal ID_PC_in : integer;
     signal ID_instruction_in : INSTRUCTION;
     signal ID_wb_instr : INSTRUCTION;
     signal ID_wb_data : std_logic_vector(63 downto 0);
 	signal ID_branch_target : std_logic_vector(bit_width-1 downto 0);	
-    signal ID_stall_out : std_logic;
+    signal ID_stall : std_logic;
 	signal ID_PC_out : integer;
 	signal ID_instruction_out : INSTRUCTION;
     signal ID_ra : std_logic_vector(bit_width-1 downto 0);
@@ -405,12 +400,11 @@ begin
         clk => clk,
 		reset => ID_reset,
 		write_en_in => ID_write_en,
-        stall_in => ID_stall_in,
         PC_in => ID_PC_in,
         instruction_in => ID_instruction_in,
         wb_instr_in => ID_wb_instr,
         wb_data_in => ID_wb_data,
-		stall_out => ID_stall_out,
+		stall_out => ID_stall,
         branch_target_out => ID_branch_target,
 		PC_out => ID_PC_out,
         instruction_out => ID_instruction_out,
@@ -520,7 +514,7 @@ begin
 	-- CONNECT SIGNALS
 	-- IF
 	IF_reset <= '1' when initialize = '1' else '0';
-    IF_stall <= ID_stall_out or control_stall;
+    IF_stall <= ID_stall or control_stall;
 	
 	IF_branch_process : process(clk,IF_ID_instruction_out,ID_EX_instruction_out,EX_MEM_instruction_out,
 								EX_MEM_branch_target_out,EX_MEM_branch_out,MEM_WB_instruction_out) 							
@@ -545,7 +539,7 @@ begin
     end process;
 	
 	-- IF/ID
-	IF_ID_register_stall <= ID_stall_out;
+	IF_ID_register_stall <= ID_stall;
 	IF_ID_PC_in <= IF_PC;
 	IF_ID_instruction_in <= NO_OP when initialize = '1' or control_stall = '1' else IF_instruction;
 							
@@ -627,8 +621,7 @@ begin
 	ID_PC_in_out <= ID_PC_in;
 	ID_ra_out <= ID_ra;
 	ID_rb_out <= ID_rb;
-	ID_stall_in_out <= ID_stall_in;
-	ID_stall_out_out <= ID_stall_out;
+	ID_stall_out <= ID_stall;
 	ID_wb_data_out <= ID_wb_data;
 	ID_wb_instr_out <= ID_wb_instr;
 	EX_alu_out <= EX_alu;

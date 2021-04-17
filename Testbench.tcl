@@ -15,8 +15,7 @@ proc AddWaves {} {
 	add wave -position end sim:/Pipelined_Processor_tb/ID_PC_in
 	add wave -position end sim:/Pipelined_Processor_tb/ID_ra
     add wave -position end sim:/Pipelined_Processor_tb/ID_rb
-	add wave -position end sim:/Pipelined_Processor_tb/ID_stall_in
-	add wave -position end sim:/Pipelined_Processor_tb/ID_stall_out
+	add wave -position end sim:/Pipelined_Processor_tb/ID_stall
 	add wave -position end sim:/Pipelined_Processor_tb/ID_wb_data
     add wave -position end sim:/Pipelined_Processor_tb/ID_wb_instr
 	add wave -position end sim:/Pipelined_Processor_tb/EX_alu
