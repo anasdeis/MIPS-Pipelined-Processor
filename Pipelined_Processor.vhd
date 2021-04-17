@@ -8,8 +8,10 @@ use work.definitions.all;
 
 -- Pipelined_Processor
 entity Pipelined_Processor is
+	--constant bit_width : integer := 32;
 	generic(
 		ram_size : integer := 8192;
+		bit_width : integer := 32;
 		mem_delay : time := 10 ns;
 		clk_period : time := 1 ns
 	);
@@ -17,9 +19,30 @@ entity Pipelined_Processor is
 		clk : in std_logic;
 		initialize : in std_logic := '0'; 
 		write_file : in std_logic := '0';
-		register_file : out REGISTER_BLOCK
+		
+		-- Testing
+		register_file : out REGISTER_BLOCK;
+		IF_branch_condition_out : out std_logic;
+		IF_branch_target_out : out integer;
+		IF_instruction_out : out INSTRUCTION;
+		IF_PC_out : out integer;
+		IF_stall_out : out std_logic;
+		control_stall_out : out std_logic;
+		ID_instruction_in_out : out INSTRUCTION;
+		ID_instruction_out_out : out INSTRUCTION;
+		ID_PC_in_out : out integer;
+		ID_ra_out : out std_logic_vector(bit_width-1 downto 0);
+		ID_rb_out : out std_logic_vector(bit_width-1 downto 0);
+		ID_stall_in_out : out std_logic;
+		ID_stall_out_out : out std_logic;
+		ID_wb_data_out : out std_logic_vector(63 downto 0);
+		ID_wb_instr_out : out INSTRUCTION;
+		EX_alu_out : out std_logic_vector(63 downto 0);
+		EX_branch_out : out std_logic;
+		MEM_m_addr_out : out integer range 0 to ram_size-1;
+		MEM_m_write_data_out : out std_logic_vector(bit_width-1 downto 0);
+		MEM_memory_data_out : out std_logic_vector(bit_width-1 downto 0)
 	);
-	constant bit_width : integer := 32;
 end Pipelined_Processor ;
 
 architecture behavioral of Pipelined_Processor is
@@ -66,8 +89,7 @@ architecture behavioral of Pipelined_Processor is
 			reset : in std_logic;       -- reset register file
 			write_en_in : in std_logic;	-- enable writing to register	
 			
-			-- Hazard / Branching
-			IR_in : in INSTRUCTION_ARRAY;  -- Instruction Register holds the instruction currently being decoded.
+			-- Hazard
 			stall_in : in std_logic;  -- stall if instruction from IF uses a register that is currently busy
 			
 			-- From IF/ID 
@@ -383,7 +405,6 @@ begin
         clk => clk,
 		reset => ID_reset,
 		write_en_in => ID_write_en,
-		IR_in => ID_IR,
         stall_in => ID_stall_in,
         PC_in => ID_PC_in,
         instruction_in => ID_instruction_in,
@@ -531,8 +552,6 @@ begin
 	-- ID
 	register_file <= ID_register_file;
 	ID_reset <= '1' when initialize = '1' else '0';
-	ID_IR(0) <= NO_OP;
-    ID_IR(1) <= NO_OP;
     ID_PC_in <= IF_ID_PC_out;
     ID_instruction_in <= IF_ID_instruction_out;
 	ID_wb_instr <= WB_instruction_out;
@@ -595,4 +614,28 @@ begin
             load_memory <= '0';
         end if;
     end process ; 
+	
+	-------------- 	OUTPUT --------------------
+	IF_branch_condition_out <= IF_branch_condition;
+	IF_branch_target_out <= IF_branch_target;
+	IF_instruction_out <= IF_instruction;
+	IF_PC_out <= IF_PC;
+	IF_stall_out <= IF_stall;
+	control_stall_out <= control_stall;
+	ID_instruction_in_out <= ID_instruction_in;
+	ID_instruction_out_out <= ID_instruction_out;
+	ID_PC_in_out <= ID_PC_in;
+	ID_ra_out <= ID_ra;
+	ID_rb_out <= ID_rb;
+	ID_stall_in_out <= ID_stall_in;
+	ID_stall_out_out <= ID_stall_out;
+	ID_wb_data_out <= ID_wb_data;
+	ID_wb_instr_out <= ID_wb_instr;
+	EX_alu_out <= EX_alu;
+	EX_branch_out <= EX_branch;
+	MEM_m_addr_out <= MEM_m_addr;
+	MEM_m_write_data_out <= MEM_m_write_data;
+	MEM_memory_data_out <= MEM_memory_data;
+	-------------------------------------------
+	
 end behavioral;

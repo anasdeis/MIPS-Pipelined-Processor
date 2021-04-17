@@ -2,8 +2,28 @@ proc AddWaves {} {
 	;#Add waves we're interested in to the Wave window
 	add wave -position end sim:/Pipelined_Processor_tb/clk
 	add wave -position end sim:/Pipelined_Processor_tb/initialize
-    	add wave -position end sim:/Pipelined_Processor_tb/write_file
+    add wave -position end sim:/Pipelined_Processor_tb/write_file
 	add wave -position end sim:/Pipelined_Processor_tb/register_file
+	add wave -position end sim:/Pipelined_Processor_tb/IF_branch_condition
+	add wave -position end sim:/Pipelined_Processor_tb/IF_branch_target
+    add wave -position end sim:/Pipelined_Processor_tb/IF_instruction
+	add wave -position end sim:/Pipelined_Processor_tb/IF_PC
+	add wave -position end sim:/Pipelined_Processor_tb/IF_stall
+	add wave -position end sim:/Pipelined_Processor_tb/control_stall
+    add wave -position end sim:/Pipelined_Processor_tb/ID_instruction_in
+	add wave -position end sim:/Pipelined_Processor_tb/ID_instruction_out
+	add wave -position end sim:/Pipelined_Processor_tb/ID_PC_in
+	add wave -position end sim:/Pipelined_Processor_tb/ID_ra
+    add wave -position end sim:/Pipelined_Processor_tb/ID_rb
+	add wave -position end sim:/Pipelined_Processor_tb/ID_stall_in
+	add wave -position end sim:/Pipelined_Processor_tb/ID_stall_out
+	add wave -position end sim:/Pipelined_Processor_tb/ID_wb_data
+    add wave -position end sim:/Pipelined_Processor_tb/ID_wb_instr
+	add wave -position end sim:/Pipelined_Processor_tb/EX_alu
+	add wave -position end sim:/Pipelined_Processor_tb/EX_branch
+	add wave -position end sim:/Pipelined_Processor_tb/MEM_m_addr
+    add wave -position end sim:/Pipelined_Processor_tb/MEM_m_write_data
+	add wave -position end sim:/Pipelined_Processor_tb/MEM_memory_data
 }
 
 vlib work
