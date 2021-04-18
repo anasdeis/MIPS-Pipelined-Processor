@@ -49,12 +49,11 @@ architecture behavioral of Decode is
 	-- SIGNALS
 	signal lo, hi : REGISTER_ENTRY := void_register; -- hi and lo for multiply and divide
 	signal register_file : REGISTER_BLOCK := void_register_file;  -- register file data structure
-	signal stall_op, stall_decode : std_logic := '0';
+	signal stall_decode : std_logic := '0';
 begin
 	register_file_out <= register_file;
 	PC_out <= PC_in;
-	stall_out <= stall_op;
-	stall_decode <= '1' when stall_op = '1' else '0';
+	stall_out <= stall_decode;
 	instruction_out <=  NO_OP when stall_decode = '1' else 
 						instruction_in;
 
@@ -211,68 +210,68 @@ begin
 		case instruction_in.name is
 			when ADD | SUB | SLT | BITWISE_AND | BITWISE_OR | BITWISE_NOR | BITWISE_XOR =>
 				if rs.busy = '1' or rt.busy = '1' or rd.busy = '1' then
-					stall_op <= '1';
+					stall_decode <= '1';
 				else
-					stall_op <= '0';
+					stall_decode <= '0';
 				end if;
 
 			when ADDI | SLTI | ANDI | ORI | XORI | LW | SW =>
 				if rs.busy = '1' or rt.busy = '1' then
-					stall_op <= '1';
+					stall_decode <= '1';
 				else
-					stall_op <= '0';
+					stall_decode <= '0';
 				end if;
 
 			when MULT | DIV =>
 				if rs.busy = '1' or rt.busy = '1' or hi.busy = '1' or lo.busy = '1' then
-					stall_op <= '1';
+					stall_decode <= '1';
 				else 
-					stall_op <= '0';
+					stall_decode <= '0';
 				end if;
 
 		    when MFHI =>
 				if rd.busy = '1' or hi.busy = '1' then
-					stall_op <= '1';
+					stall_decode <= '1';
 				else
-					stall_op <= '0';
+					stall_decode <= '0';
 				end if;
 
 			when MFLO =>
 				if rd.busy = '1' or lo.busy = '1' then
-					stall_op <= '1';
+					stall_decode <= '1';
 				else
-					stall_op <= '0';
+					stall_decode <= '0';
 				end if;
 
 			when LUI =>
 				if rt.busy = '1' then
-					stall_op <= '1';
+					stall_decode <= '1';
 				else 
-					stall_op <= '0';
+					stall_decode <= '0';
 				end if;
 
 			when SHIFT_LL | SHIFT_RL | SHIFT_RA =>
 				if rd.busy = '1' or rt.busy = '1' then
-					stall_op <= '1';
+					stall_decode <= '1';
 				else
-					stall_op <= '0';
+					stall_decode <= '0';
 				end if;
 				
 			when BEQ | BNE =>
 				if rs.busy = '1' or rt.busy = '1' then
-					stall_op <= '1';
+					stall_decode <= '1';
 				else
-					stall_op <= '0';
+					stall_decode <= '0';
 				end if;
 				
 			when J | JAL =>
-				stall_op <= '0';
+				stall_decode <= '0';
 				
 			when JR =>
 				if rs.busy = '1' then
-					stall_op <= '1';
+					stall_decode <= '1';
 				else
-					stall_op <= '0';
+					stall_decode <= '0';
 				end if;
 				
 			when UNKNOWN  =>
