@@ -54,8 +54,7 @@ begin
 	register_file_out <= register_file;
 	PC_out <= PC_in;
 	stall_out <= stall_decode;
-	instruction_out <=  NO_OP when stall_decode = '1' else 
-						instruction_in;
+	instruction_out <=  NO_OP when stall_decode = '1' else instruction_in;
 
 	decode_process : process(clk, reset, instruction_in, wb_instr_in, wb_data_in, register_file, stall_decode)
 		variable rs, wb_rs, rt, wb_rt, rd, wb_rd : integer range 0 to NUM_REGISTERS-1;
