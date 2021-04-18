@@ -62,8 +62,8 @@ package definitions is
     );
     type INSTRUCTION is
     record
-        format : INSTRUCTION_FORMAT;
 		name : INSTRUCTION_SET;
+        format : INSTRUCTION_FORMAT;
         rs : integer range 0 to 31;
 		rs_vect : std_logic_vector(4 downto 0);
         rt : integer range 0 to 31;
