@@ -1,2 +1,2 @@
 benchmark2
-Elapsed time : 103000 ps
+Execution time : 103000 ps

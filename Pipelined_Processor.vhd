@@ -264,7 +264,6 @@ architecture behavioral of Pipelined_Processor is
     -- Decode
 	signal ID_reset : std_logic;
 	signal ID_write_en : std_logic;
-	signal ID_IR : INSTRUCTION_ARRAY := (others => NO_OP);
     signal ID_PC_in : integer;
     signal ID_instruction_in : INSTRUCTION;
     signal ID_wb_instr : INSTRUCTION;

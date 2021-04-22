@@ -32,25 +32,21 @@ entity Fetch is
 	end Fetch;
 
 architecture behavioral of Fetch is
-	signal PC, PC_next : integer range 0 to ram_size - 1 := 0;
+	signal PC, PC_next : integer range 0 to ram_size-1 := 0;
 begin 
 
-	PC_out <= PC; 
-	PC_next <= 	0 when reset = '1' else
-				branch_target_in when branch_condition_in = '1' else -- branch when test condition is true
-				PC when PC + 4 >= ram_size-1 else  -- PC reached max value so do not increment	
-				PC when stall_in = '1' else  -- stall with no-op
-				PC + 4;	-- next instruction 	
+	PC_out  <= PC; 
+	PC_next <= 	PC when PC + 4 >= ram_size-1 or stall_in = '1' else PC + 4;	-- next instruction
 
-	PC_process : process(clk, reset, stall_in, branch_target_in, branch_condition_in, PC_next)
+	PC_process : process(clk, reset, branch_target_in, branch_condition_in, PC_next)
 	begin
 		if reset = '1' then
 			PC <= 0;
 		elsif rising_edge(clk) then
 			if branch_condition_in = '1' then  -- branch when test condition is true
-			PC <= branch_target_in;
+				PC <= branch_target_in;
 			else
-			PC <= PC_next; -- otherwise next instruction
+				PC <= PC_next; -- otherwise next instruction
 			end if;
 		end if ;
 	end process; 

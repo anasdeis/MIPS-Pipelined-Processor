@@ -84,7 +84,7 @@ begin
 		file_open(fptr, FILEPATH, WRITE_MODE);
         write(line, TEST_NAME);
         writeline(fptr, line);
-        write(line, "Elapsed time : " & time'image(time_taken));
+        write(line, "Execution time : " & time'image(time_taken));
         writeline(fptr, line);
 		file_close(fptr);
 		
